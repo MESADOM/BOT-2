@@ -52,7 +52,7 @@ RUTA_SALIDA_RESUMEN = DIR_DATOS / "resumen_anual_generado.csv"
 # ============================================================
 # CAPITAL Y COSTES
 # ============================================================
-CAPITAL_INICIAL_EUR = 10000.0
+CAPITAL_INICIAL_EUR = 1000.0
 COMISION_POR_OPERACION_EUR = 2.0
 
 # ============================================================
