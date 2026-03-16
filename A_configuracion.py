@@ -10,12 +10,12 @@
 #
 # Cambios en esta version:
 # - Se redefine la configuracion para una estrategia base y estable
-# - Se eliminan parametros del score provisional
 # - Se fijan parametros simples:
 #   * media larga
 #   * confirmacion de entrada
 #   * trailing stop
 #   * sizing por porcentaje de capital
+#   * limite maximo de unidades
 # - Se mantiene el proyecto preparado para seguir creciendo por bloques
 #
 # Historial:
@@ -32,11 +32,11 @@ VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 1
 VERSION_ESTRATEGIA = 1
 
-
-
 from pathlib import Path
 
-
+# ============================================================
+# RUTAS
+# ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 DIR_DATOS = BASE_DIR / "datos"
 
@@ -56,23 +56,22 @@ CAPITAL_INICIAL_EUR = 1000.0
 COMISION_POR_OPERACION_EUR = 2.0
 
 # ============================================================
-# PARAMETROS DE ESTRATEGIA
-# IMPORTANTE:
-# Estos son valores base para dejar la estructura hecha.
-# Aquí es donde luego ajustaremos tu estrategia real.
+# SIZING
 # ============================================================
-UMBRAL_SCORE_ENTRADA = 6
-STOP_LOSS_PCT = 0.07
-TAKE_PROFIT_PCT = 0.12
-MAX_DIAS_EN_OPERACION = 20
+PORCENTAJE_CAPITAL_POR_ENTRADA = 0.60
+MAX_UNIDADES_POR_COMPRA = 4
 
-# Filtros base
-USAR_FILTRO_VIX = True
-VIX_MAXIMO_PERMITIDO = 28.0
-
-USAR_FILTRO_TENDENCIA_QQQ = True
-PERIODO_MEDIA_CORTA = 20
+# ============================================================
+# PARAMETROS - BLOQUE 1
+# Estrategia base:
+# - Señal en QQQ
+# - Ejecución en QQQ3
+# - Confirmación sobre media larga
+# - Salida por trailing o señal OFF
+# ============================================================
 PERIODO_MEDIA_LARGA = 50
+DIAS_CONFIRMACION_ENTRADA = 2
+TRAILING_STOP_PCT = 0.12
 
 # ============================================================
 # NOMBRES INTERNOS DE TABLAS
@@ -84,22 +83,25 @@ NOMBRE_TABLA_RESUMEN_ANUAL = "resumen_anual"
 # COLUMNAS INTERNAS MAESTRAS
 # ============================================================
 COLUMNAS_OPERACIONES = [
-    "version_bot",
+    "version_sistema",
     "fecha_entrada",
     "fecha_salida",
     "precio_entrada",
     "precio_salida",
-    "score_entrada",
-    "estado_mercado",
-    "regimen",
+    "unidades",
+    "senal_entrada",
     "motivo_salida",
     "beneficio_neto_eur",
+    "beneficio_acumulado_eur",
     "rentabilidad_pct",
+    "capital_antes_eur",
     "capital_acumulado_eur",
+    "maximo_desde_entrada",
+    "stop_trailing",
 ]
 
 COLUMNAS_RESUMEN_ANUAL = [
-    "version_bot",
+    "version_sistema",
     "anio",
     "operaciones",
     "ganadoras",
