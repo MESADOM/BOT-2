@@ -42,7 +42,7 @@ import math
 import pandas as pd
 
 from A_configuracion import (
-    VERSION_BOT,
+    VERSION_SISTEMA,
     CAPITAL_INICIAL_EUR,
     COMISION_POR_OPERACION_EUR,
     PERIODO_MEDIA_LARGA,
@@ -187,7 +187,7 @@ def ejecutar_estrategia(df: pd.DataFrame) -> pd.DataFrame:
 
                 operaciones.append(
                     {
-                        "version_bot": VERSION_BOT,
+                        "version_sistema": VERSION_SISTEMA,
                         "fecha_entrada": operacion_abierta.fecha_entrada,
                         "fecha_salida": fecha,
                         "precio_entrada": round(operacion_abierta.precio_entrada, 6),
@@ -222,7 +222,7 @@ def crear_resumen_anual(df_operaciones: pd.DataFrame) -> pd.DataFrame:
     if df_operaciones.empty:
         return pd.DataFrame(
             columns=[
-                "version_bot",
+                "version_sistema",
                 "anio",
                 "operaciones",
                 "ganadoras",
@@ -268,7 +268,7 @@ def crear_resumen_anual(df_operaciones: pd.DataFrame) -> pd.DataFrame:
         drawdowns.append(round(float(dd.min()) if not dd.empty else 0.0, 4))
 
     resumen["drawdown_max_pct"] = drawdowns
-    resumen.insert(0, "version_bot", VERSION_BOT)
+    resumen.insert(0, "version_sistema", VERSION_SISTEMA)
 
     return resumen
 
