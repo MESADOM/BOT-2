@@ -1,3 +1,31 @@
+# ============================================================
+# SISTEMA DE VERSIONADO
+# Formato: P.C.E
+# P = version de A_principal.py
+# C = version de A_configuracion.py
+# E = version de A_estrategia.py
+#
+# Version actual: 1.1.1
+# Fecha: 2026-03-16
+#
+# Cambios en esta version:
+# - No hay cambios funcionales en este archivo
+# - Se actualiza solo la referencia de version global del sistema
+#
+# Historial:
+# 1.0.0
+# - Flujo principal inicial
+#
+# 1.1.1
+# - Sin cambios funcionales
+# - Se sincroniza la version global con configuracion y estrategia
+# ============================================================
+
+VERSION_SISTEMA = "1.1.1"
+VERSION_PRINCIPAL = 1
+VERSION_CONFIGURACION = 1
+VERSION_ESTRATEGIA = 1
+
 from __future__ import annotations
 
 import pandas as pd
