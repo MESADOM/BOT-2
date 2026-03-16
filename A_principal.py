@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.1
+# Version actual: 1.1.3
 # Fecha: 2026-03-16
 #
 # Cambios en esta version:
@@ -19,19 +19,21 @@
 # 1.1.1
 # - Sin cambios funcionales
 # - Se sincroniza la version global con configuracion y estrategia
+
+# 1.1.3
+# - Se actualiza version global para reflejar confirmacion de señal 2 -> 1
+# - Sin cambios de logica en este archivo
 # ============================================================
 
-VERSION_SISTEMA = "1.1.1"
+VERSION_SISTEMA = "1.1.3"
 VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 1
 VERSION_ESTRATEGIA = 1
 
-from __future__ import annotations
-
 import pandas as pd
 
 from A_configuracion import (
-    VERSION_BOT,
+    VERSION_SISTEMA,
     RUTA_QQQ,
     RUTA_QQQ3,
     RUTA_VIX,
@@ -67,7 +69,7 @@ def ejecutar_bot():
         df_resumen_anual.to_csv(RUTA_SALIDA_RESUMEN, index=False, encoding="utf-8-sig")
 
     return {
-        "version_bot": VERSION_BOT,
+        "version_bot": VERSION_SISTEMA,
         "datos_base": df_base,
         "operaciones": df_operaciones,
         "resumen_anual": df_resumen_anual,

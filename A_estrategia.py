@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.2
+# Version actual: 1.1.3
 # Fecha: 2026-03-16
 #
 # Cambios en esta version:
@@ -27,6 +27,10 @@
 # 1.1.2
 # - Se hace mas realista la simulacion desplazando la ejecucion al siguiente dia
 # - Primera mejora fuerte orientada a acercar backtest y paper/live
+
+# 1.1.3
+# - Se mantiene la logica operativa y se documenta la confirmacion de señal 2 -> 1
+# - El ajuste real del parametro vive en A_configuracion.py
 # ============================================================
 
 from __future__ import annotations

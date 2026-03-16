@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.1
+# Version actual: 1.1.3
 # Fecha: 2026-03-16
 #
 # Cambios en esta version:
@@ -25,9 +25,13 @@
 # 1.1.1
 # - Se simplifica la configuracion para replicar el nucleo del bot anterior
 # - Se prepara la base para backtest, paper y real con la misma logica
+
+# 1.1.3
+# - Se baja DIAS_CONFIRMACION_ENTRADA de 2 a 1 para validar impacto
+# - No se altera la logica operativa, solo el parametro de confirmacion
 # ============================================================
 
-VERSION_SISTEMA = "1.1.1"
+VERSION_SISTEMA = "1.1.3"
 VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 1
 VERSION_ESTRATEGIA = 1
@@ -70,7 +74,7 @@ MAX_UNIDADES_POR_COMPRA = 4
 # - Salida por trailing o señal OFF
 # ============================================================
 PERIODO_MEDIA_LARGA = 50
-DIAS_CONFIRMACION_ENTRADA = 2
+DIAS_CONFIRMACION_ENTRADA = 1
 TRAILING_STOP_PCT = 0.12
 
 # ============================================================
