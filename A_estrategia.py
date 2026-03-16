@@ -183,6 +183,7 @@ def ejecutar_estrategia(df: pd.DataFrame) -> pd.DataFrame:
                     rentabilidad_pct = (beneficio_neto / operacion_abierta.capital_antes_eur) * 100.0
 
                 capital_actual += beneficio_neto
+                beneficio_acumulado_eur = capital_actual - CAPITAL_INICIAL_EUR
 
                 operaciones.append(
                     {
@@ -197,6 +198,7 @@ def ejecutar_estrategia(df: pd.DataFrame) -> pd.DataFrame:
                         "beneficio_neto_eur": round(beneficio_neto, 2),
                         "rentabilidad_pct": round(rentabilidad_pct, 4),
                         "capital_antes_eur": round(operacion_abierta.capital_antes_eur, 2),
+                        "beneficio_acumulado_eur": round(beneficio_acumulado_eur, 2),
                         "capital_acumulado_eur": round(capital_actual, 2),
                         "maximo_desde_entrada": round(operacion_abierta.maximo_desde_entrada, 6),
                         "stop_trailing": round(stop_trailing, 6),
