@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.2
+# Version actual: 1.1.3
 # Fecha: 2026-03-16
 #
 # Cambios en esta version:
