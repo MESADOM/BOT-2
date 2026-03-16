@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.1
+# Version actual: 1.1.2
 # Fecha: 2026-03-16
 #
 # Cambios en esta version:
@@ -27,7 +27,7 @@
 # - Se prepara la base para backtest, paper y real con la misma logica
 # ============================================================
 
-VERSION_SISTEMA = "1.1.1"
+VERSION_SISTEMA = "1.1.2"
 VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 1
 VERSION_ESTRATEGIA = 1
