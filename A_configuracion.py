@@ -70,7 +70,7 @@ MAX_UNIDADES_POR_COMPRA = 4
 # - Salida por trailing o señal OFF
 # ============================================================
 PERIODO_MEDIA_LARGA = 50
-DIAS_CONFIRMACION_ENTRADA = 2
+DIAS_CONFIRMACION_ENTRADA = 1
 TRAILING_STOP_PCT = 0.12
 
 # ============================================================
