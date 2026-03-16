@@ -1,18 +1,42 @@
+# ============================================================
+# SISTEMA DE VERSIONADO
+# Formato: P.C.E
+# P = version de A_principal.py
+# C = version de A_configuracion.py
+# E = version de A_estrategia.py
+#
+# Version actual: 1.1.1
+# Fecha: 2026-03-16
+#
+# Cambios en esta version:
+# - Se redefine la configuracion para una estrategia base y estable
+# - Se eliminan parametros del score provisional
+# - Se fijan parametros simples:
+#   * media larga
+#   * confirmacion de entrada
+#   * trailing stop
+#   * sizing por porcentaje de capital
+# - Se mantiene el proyecto preparado para seguir creciendo por bloques
+#
+# Historial:
+# 1.0.0
+# - Configuracion inicial del nuevo bot
+#
+# 1.1.1
+# - Se simplifica la configuracion para replicar el nucleo del bot anterior
+# - Se prepara la base para backtest, paper y real con la misma logica
+# ============================================================
+
+VERSION_SISTEMA = "1.1.1"
+VERSION_PRINCIPAL = 1
+VERSION_CONFIGURACION = 1
+VERSION_ESTRATEGIA = 1
+
+
+
 from pathlib import Path
 
-# ============================================================
-# VERSION INTERNA DEL BOT
-# Formato: P.C.E
-# P = 00_principal.py
-# C = 00_configuracion.py
-# E = 00_estrategia.py
-# ============================================================
-VERSION_BOT = "1.0.0"
 
-# ============================================================
-# RUTAS
-# Ajusta estos nombres si tus CSV tienen otro nombre o ubicación
-# ============================================================
 BASE_DIR = Path(__file__).resolve().parent
 DIR_DATOS = BASE_DIR / "datos"
 
