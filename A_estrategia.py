@@ -5,8 +5,28 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.2
+# Version actual: 1.1.2 
 # Fecha: 2026-03-16
+#
+# Cambios en esta version:
+# - Se mejora el backtest para separar decision y ejecucion
+# - La señal se decide con el cierre del dia actual
+# - La entrada se ejecuta al open del dia siguiente
+# - La salida se ejecuta al open del dia siguiente
+# - El trailing sigue evaluandose con el cierre, pero ya no se ejecuta en la misma barra
+# - Se mantiene la logica simple para seguir validando el sistema por bloques
+#
+# Historial:
+# 1.0.0
+# - Estrategia inicial del nuevo bot con score y salidas mixtas
+#
+# 1.1.1
+# - Estrategia reducida al nucleo que queremos validar antes de seguir complicando
+# - Señal simple con QQQ y ejecucion sobre QQQ3
+#
+# 1.1.2
+# - Se hace mas realista la simulacion desplazando la ejecucion al siguiente dia
+# - Primera mejora fuerte orientada a acercar backtest y paper/live
 # ============================================================
 
 from __future__ import annotations
