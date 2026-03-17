@@ -5,34 +5,21 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.2
-# Fecha: 2026-03-16
+# Version actual: 1.2.1
+# Fecha: 2026-03-17
 #
 # Cambios en esta version:
-# - Se redefine la configuracion para una estrategia base y estable
-# - Se fijan parametros simples:
-#   * media larga
-#   * confirmacion de entrada
-#   * trailing stop
-#   * sizing por porcentaje de capital
-#   * limite maximo de unidades
-# - Se mantiene el proyecto preparado para seguir creciendo por bloques
-#
-# Historial:
-# 1.0.0
-# - Configuracion inicial del nuevo bot
-#
-# 1.1.1
-# - Se simplifica la configuracion para replicar el nucleo del bot anterior
-# - Se prepara la base para backtest, paper y real con la misma logica
+# - Se incorpora selector de regimen de mercado semanal
+# - Se mantiene logica base de señal/entrada/salida
+# - El sizing pasa a ser dinamico por regimen AGRESIVO/DEFENSIVO
 # ============================================================
 
-VERSION_SISTEMA = "1.1.2"
-VERSION_PRINCIPAL = 1
-VERSION_CONFIGURACION = 1
-VERSION_ESTRATEGIA = 1
-
 from pathlib import Path
+
+VERSION_SISTEMA = "1.2.1"
+VERSION_PRINCIPAL = 1
+VERSION_CONFIGURACION = 2
+VERSION_ESTRATEGIA = 1
 
 # ============================================================
 # RUTAS
@@ -56,22 +43,30 @@ CAPITAL_INICIAL_EUR = 1000.0
 COMISION_POR_OPERACION_EUR = 2.0
 
 # ============================================================
-# SIZING
-# ============================================================
-PORCENTAJE_CAPITAL_POR_ENTRADA = 0.60
-MAX_UNIDADES_POR_COMPRA = 4
-
-# ============================================================
-# PARAMETROS - BLOQUE 1
-# Estrategia base:
-# - Señal en QQQ
-# - Ejecución en QQQ3
-# - Confirmación sobre media larga
-# - Salida por trailing o señal OFF
+# PARAMETROS - BLOQUE 1 (logica base)
 # ============================================================
 PERIODO_MEDIA_LARGA = 50
 DIAS_CONFIRMACION_ENTRADA = 1
 TRAILING_STOP_PCT = 0.12
+
+# ============================================================
+# REGIMEN DE MERCADO Y SIZING DINAMICO
+# ============================================================
+REGIMEN_AGRESIVO = "AGRESIVO"
+REGIMEN_DEFENSIVO = "DEFENSIVO"
+
+FRECUENCIA_REVISION_REGIMEN = "SEMANAL"
+
+PERIODO_SMA200_REGIMEN = 200
+VENTANA_RETORNO_63_REGIMEN = 63
+VENTANA_CRUCES_SMA50_REGIMEN = 20
+UMBRAL_CRUCES_SERRUCHO = 4
+
+SIZING_AGRESIVO_PORCENTAJE_CAPITAL = 0.90
+SIZING_AGRESIVO_MAX_UNIDADES = 50
+
+SIZING_DEFENSIVO_PORCENTAJE_CAPITAL = 0.70
+SIZING_DEFENSIVO_MAX_UNIDADES = 10
 
 # ============================================================
 # NOMBRES INTERNOS DE TABLAS
@@ -91,6 +86,14 @@ COLUMNAS_OPERACIONES = [
     "unidades",
     "senal_entrada",
     "motivo_salida",
+    "regimen_entrada",
+    "regimen_vigente",
+    "porcentaje_objetivo_entrada",
+    "max_unidades_entrada",
+    "capital_objetivo_entrada_eur",
+    "capital_invertido_entrada_eur",
+    "porcentaje_real_invertido",
+    "entrada_capada_por_unidades",
     "beneficio_neto_eur",
     "beneficio_acumulado_eur",
     "rentabilidad_pct",
@@ -110,4 +113,9 @@ COLUMNAS_RESUMEN_ANUAL = [
     "beneficio_neto_eur",
     "rentabilidad_pct",
     "drawdown_max_pct",
+    "operaciones_agresivo",
+    "operaciones_defensivo",
+    "beneficio_neto_agresivo_eur",
+    "beneficio_neto_defensivo_eur",
+    "capital_acumulado_eur",
 ]
