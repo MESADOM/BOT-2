@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.3.4
+# Version actual: 1.3.5
 # Fecha: 2026-03-18
 #
 # Cambios en esta version:
@@ -15,6 +15,7 @@
 # - Se añaden metricas y diagnostico del regimen
 # - Se limpia codigo intermedio que ya no aporta
 # - Se amplía a 5-9 días la ventana del bloqueo adicional de reentrada con retorno63>0.04
+# - Se adopta como nueva base el bloqueo adicional por última operación perdedora entre 5 y 9 días
 # ============================================================
 
 from __future__ import annotations
@@ -532,7 +533,18 @@ def ejecutar_estrategia(
                     and retorno_63_hoy is not None
                     and retorno_63_hoy > 0.04
                 )
-                if permitir_nueva_entrada and not bloquear_por_retorno_y_cruces and not bloqueo_reentrada_cercana:
+                bloqueo_ultima_operacion_perdedora = (
+                    dias_desde_ultima_salida is not None
+                    and 5 <= dias_desde_ultima_salida <= 9
+                    and len(operaciones) >= 1
+                    and float(operaciones[-1].get("beneficio_neto_eur", 0.0)) < 0
+                )
+                if (
+                    permitir_nueva_entrada
+                    and not bloquear_por_retorno_y_cruces
+                    and not bloqueo_reentrada_cercana
+                    and not bloqueo_ultima_operacion_perdedora
+                ):
                     entrada_pendiente = True
                     regimen_entrada_pendiente = str(hoy.get("regimen", REGIMEN_DEFENSIVO))
                     diagnostico_entrada_pendiente = {
