@@ -5,8 +5,8 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.1.2
-# Fecha: 2026-03-16
+# Version actual: 1.3.1
+# Fecha: 2026-03-18
 # ============================================================
 
 import csv

@@ -5,8 +5,8 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.2.1
-# Fecha: 2026-03-17
+# Version actual: 1.3.1
+# Fecha: 2026-03-18
 #
 # Cambios en esta version:
 # - Se incorpora selector de regimen de mercado semanal
@@ -16,9 +16,9 @@
 
 from pathlib import Path
 
-VERSION_SISTEMA = "1.2.1"
+VERSION_SISTEMA = "1.3.1"
 VERSION_PRINCIPAL = 1
-VERSION_CONFIGURACION = 2
+VERSION_CONFIGURACION = 3
 VERSION_ESTRATEGIA = 1
 
 # ============================================================
