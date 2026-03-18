@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.3.4
+# Version actual: 1.3.5
 # Fecha: 2026-03-18
 #
 # Cambios en esta version:
@@ -13,14 +13,15 @@
 # - Se mantiene logica base de señal/entrada/salida
 # - El sizing pasa a ser dinamico por regimen AGRESIVO/DEFENSIVO
 # - Se amplía a 5-9 días la ventana del bloqueo adicional de reentrada con retorno63>0.04
+# - Se adopta como nueva base la variante con bloqueo por última operación perdedora entre 5 y 9 días
 # ============================================================
 
 from pathlib import Path
 
-VERSION_SISTEMA = "1.3.4"
+VERSION_SISTEMA = "1.3.5"
 VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 3
-VERSION_ESTRATEGIA = 4
+VERSION_ESTRATEGIA = 5
 
 # ============================================================
 # RUTAS
