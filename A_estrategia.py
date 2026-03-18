@@ -397,6 +397,7 @@ def ejecutar_estrategia(
     motivo_salida_pendiente = ""
     regimen_entrada_pendiente = REGIMEN_DEFENSIVO
     diagnostico_entrada_pendiente: Dict[str, Any] = {}
+    ultima_fecha_salida_ejecutada: Optional[datetime] = None
 
     for i in range(len(df) - 1):
         hoy = df[i]
@@ -462,6 +463,7 @@ def ejecutar_estrategia(
                 }
             )
 
+            ultima_fecha_salida_ejecutada = manana["fecha"]
             operacion_abierta = None
             salida_pendiente = False
             motivo_salida_pendiente = ""
@@ -513,19 +515,24 @@ def ejecutar_estrategia(
 
         if operacion_abierta is None:
             if bool(hoy.get("senal_confirmada", False)):
-                entrada_pendiente = True
-                regimen_entrada_pendiente = str(hoy.get("regimen", REGIMEN_DEFENSIVO))
-                diagnostico_entrada_pendiente = {
-                    "score_regimen": hoy.get("score_regimen", 0),
-                    "qqq_close_referencia": hoy.get("qqq_close_referencia", hoy.get("qqq_close", 0.0) or 0.0),
-                    "sma200_referencia": hoy.get("sma200_referencia"),
-                    "qqq_mayor_sma200": hoy.get("qqq_mayor_sma200"),
-                    "retorno_63": hoy.get("retorno_63"),
-                    "retorno_estado": hoy.get("retorno_estado", "NEUTRAL"),
-                    "cruces_sma50_ventana": hoy.get("cruces_sma50_ventana", 0),
-                    "cruces_estado": hoy.get("cruces_estado", "NO_ALTO"),
-                    "motivo_regimen": hoy.get("motivo_regimen", ""),
-                }
+                permitir_nueva_entrada = True
+                if ultima_fecha_salida_ejecutada is not None:
+                    dias_desde_ultima_salida = (hoy["fecha"] - ultima_fecha_salida_ejecutada).days
+                    permitir_nueva_entrada = dias_desde_ultima_salida >= 5
+                if permitir_nueva_entrada:
+                    entrada_pendiente = True
+                    regimen_entrada_pendiente = str(hoy.get("regimen", REGIMEN_DEFENSIVO))
+                    diagnostico_entrada_pendiente = {
+                        "score_regimen": hoy.get("score_regimen", 0),
+                        "qqq_close_referencia": hoy.get("qqq_close_referencia", hoy.get("qqq_close", 0.0) or 0.0),
+                        "sma200_referencia": hoy.get("sma200_referencia"),
+                        "qqq_mayor_sma200": hoy.get("qqq_mayor_sma200"),
+                        "retorno_63": hoy.get("retorno_63"),
+                        "retorno_estado": hoy.get("retorno_estado", "NEUTRAL"),
+                        "cruces_sma50_ventana": hoy.get("cruces_sma50_ventana", 0),
+                        "cruces_estado": hoy.get("cruces_estado", "NO_ALTO"),
+                        "motivo_regimen": hoy.get("motivo_regimen", ""),
+                    }
         else:
             operacion_abierta.maximo_desde_entrada = max(operacion_abierta.maximo_desde_entrada, qqq3_close_hoy)
             stop_trailing = operacion_abierta.maximo_desde_entrada * (1.0 - TRAILING_STOP_PCT)
