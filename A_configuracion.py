@@ -5,21 +5,22 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.3.3
+# Version actual: 1.3.4
 # Fecha: 2026-03-18
 #
 # Cambios en esta version:
 # - Se incorpora selector de regimen de mercado semanal
 # - Se mantiene logica base de señal/entrada/salida
 # - El sizing pasa a ser dinamico por regimen AGRESIVO/DEFENSIVO
+# - Se amplía a 5-9 días la ventana del bloqueo adicional de reentrada con retorno63>0.04
 # ============================================================
 
 from pathlib import Path
 
-VERSION_SISTEMA = "1.3.3"
+VERSION_SISTEMA = "1.3.4"
 VERSION_PRINCIPAL = 1
 VERSION_CONFIGURACION = 3
-VERSION_ESTRATEGIA = 1
+VERSION_ESTRATEGIA = 4
 
 # ============================================================
 # RUTAS

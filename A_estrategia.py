@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.3.3
+# Version actual: 1.3.4
 # Fecha: 2026-03-18
 #
 # Cambios en esta version:
@@ -14,6 +14,7 @@
 # - El sizing pasa a ser dinamico por regimen
 # - Se añaden metricas y diagnostico del regimen
 # - Se limpia codigo intermedio que ya no aporta
+# - Se amplía a 5-9 días la ventana del bloqueo adicional de reentrada con retorno63>0.04
 # ============================================================
 
 from __future__ import annotations
@@ -527,7 +528,7 @@ def ejecutar_estrategia(
                 )
                 bloqueo_reentrada_cercana = (
                     dias_desde_ultima_salida is not None
-                    and 5 <= dias_desde_ultima_salida <= 8
+                    and 5 <= dias_desde_ultima_salida <= 9
                     and retorno_63_hoy is not None
                     and retorno_63_hoy > 0.04
                 )
