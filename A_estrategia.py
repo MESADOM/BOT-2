@@ -5,7 +5,7 @@
 # C = version de A_configuracion.py
 # E = version de A_estrategia.py
 #
-# Version actual: 1.3.1
+# Version actual: 1.3.3
 # Fecha: 2026-03-18
 #
 # Cambios en esta version:
@@ -516,6 +516,7 @@ def ejecutar_estrategia(
         if operacion_abierta is None:
             if bool(hoy.get("senal_confirmada", False)):
                 permitir_nueva_entrada = True
+                dias_desde_ultima_salida = None
                 if ultima_fecha_salida_ejecutada is not None:
                     dias_desde_ultima_salida = (hoy["fecha"] - ultima_fecha_salida_ejecutada).days
                     permitir_nueva_entrada = dias_desde_ultima_salida >= 5
@@ -524,7 +525,13 @@ def ejecutar_estrategia(
                 bloquear_por_retorno_y_cruces = (
                     retorno_63_hoy is not None and retorno_63_hoy > 0.04 and cruces_sma50_hoy >= 4
                 )
-                if permitir_nueva_entrada and not bloquear_por_retorno_y_cruces:
+                bloqueo_reentrada_cercana = (
+                    dias_desde_ultima_salida is not None
+                    and 5 <= dias_desde_ultima_salida <= 8
+                    and retorno_63_hoy is not None
+                    and retorno_63_hoy > 0.04
+                )
+                if permitir_nueva_entrada and not bloquear_por_retorno_y_cruces and not bloqueo_reentrada_cercana:
                     entrada_pendiente = True
                     regimen_entrada_pendiente = str(hoy.get("regimen", REGIMEN_DEFENSIVO))
                     diagnostico_entrada_pendiente = {
