@@ -1384,7 +1384,7 @@ main{padding:100px 24px 24px 48px!important;}
 
 
 /* EXCEDENTES / BATERIA - segunda línea principal y compactación técnica */
-.topConfigBar{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 0 14px;border:1px solid #d7e2ef;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 10px 26px rgba(23,32,51,.08)}
+.topConfigBar{display:grid;grid-template-columns:1fr 1fr;gap:0;margin:0 0 14px;border:1px solid #d7e2ef;border-radius:18px;overflow:hidden;background:#fff;box-shadow:0 10px 26px rgba(23,32,51,.08);position:sticky;top:86px;z-index:89}
 .topConfigHalf{min-height:96px;padding:14px 18px;display:flex;flex-direction:column;justify-content:center;gap:10px}
 .topConfigExcess{background:linear-gradient(180deg,#f8fbff,#eef6ff)}
 .topConfigBattery{background:linear-gradient(180deg,#fbfffd,#eefbf6);border-left:1px solid #d7e2ef}
@@ -1510,7 +1510,7 @@ main{padding:100px 24px 24px 48px!important;}
 <section id="est" class="tab">
   <div class="card">
     <h2>Estudio FV — potencia óptima</h2>
-    <div class="note">Calcula la potencia FV recomendada a partir de los datos cargados y de los parámetros definidos en “Datos de partida”. El cálculo automático no queda condicionado por el rango manual.</div>
+    <div class="note">Calcula la potencia FV recomendada a partir de los datos cargados y de los parámetros definidos en “Datos de partida”.</div>
     <div class="estModeGrid">
       <div class="estMode estModeAuto"><h3>Cálculo automático</h3><p class="mut">Calcula la potencia recomendada con el criterio seleccionado. Las tres alternativas calculadas aparecerán justo encima del resultado recomendado.</p><input id="estCrit" type="hidden" value="eq"/>
         <div class="estMethodBox autoCriteriaBox"><div class="estMethodTitle">Regla exacta de selección de cada criterio</div><div class="estMethodGrid">
@@ -1519,15 +1519,6 @@ main{padding:100px 24px 24px 48px!important;}
           <div class="estMethodItem crit-tec" data-crit="tec" onclick="selectEstCrit('tec')"><b>Índice técnico-económico</b><br>Normaliza VAN, TIR y aprovechamiento respecto al mejor valor de la tabla y aplica la ponderación definida. Penaliza potencias con bajo aprovechamiento relativo.<span class="formula">Índice T-E = 40 % VANn + 40 % TIRn + 20 % Aprovech.n</span></div>
         </div><div class="eqAprovInline"><label>Aprovechamiento mínimo <input id="estAprovMin" type="number" step="1" value="90"> %</label><span>solo para la recomendación equilibrada</span></div></div>
         <button class="estBigBtn" id="calcEstAuto" type="button">Calcular recomendada</button><div class="estTiny" id="estAutoInfo"></div><div class="estTiny" id="estAutoRec">Pendiente de cálculo automático.</div></div>
-      <div class="estMode">
-        <h3>Cálculo manual</h3>
-        <p class="mut">Introduce únicamente la potencia FV que quieres comprobar. La herramienta calculará internamente el rango de 20 líneas usando el mismo paso que el cálculo automático.</p>
-        <div class="estControls manual">
-          <div class="estBox"><label>Potencia a comprobar (kWp)</label><div class="stepper"><button type="button" onclick="adjEst('estManualKwp',-estStep(),1)">−</button><input id="estManualKwp" type="number" step="1" placeholder="kWp"><button type="button" onclick="adjEst('estManualKwp',estStep(),1)">+</button></div></div>
-        </div>
-        <div class="estManualActions"><button id="calcEst" type="button" class="estBigBtn">Calcular manual</button></div>
-        <div id="estManualRec" class="estTiny">Recomendada: pendiente de cálculo.</div>
-      </div>
     </div>
     <div id="stEst" class="status"></div>
   </div>
@@ -3078,7 +3069,7 @@ function renderBatteryStudy(force){
     if(force&&box)box.className='hide'
   }
 }
-document.querySelectorAll('.modeChoice').forEach(b=>b.onclick=()=>setExcessMode(b.dataset.mode));document.querySelectorAll('.storageChoice').forEach(b=>b.onclick=()=>{if($('batteryEnabled'))$('batteryEnabled').value=b.dataset.storage;syncEnergyMode();});initEstPex();$('applyTar').onclick=()=>{syncEstPex();saveTar();syncEnergyMode();};$('tarType').onchange=e=>{loadTariffDefaults(e.target.value);renderTar();syncEnergyMode()};if($('tarEnergyMode'))$('tarEnergyMode').onchange=e=>setExcessMode(e.target.value);if($('batteryEnabled'))$('batteryEnabled').onchange=syncEnergyMode;if($('topBatteryToggle'))$('topBatteryToggle').onchange=e=>{if($('batteryEnabled'))$('batteryEnabled').value=e.target.checked?'yes':'no';syncEnergyMode()};if($('batteryMode'))$('batteryMode').onchange=syncEnergyMode;['batteryExcPct','batteryConsPct','topBatteryUnits','pex'].forEach(id=>{if($(id))$(id).addEventListener('input',syncEnergyMode)});document.querySelectorAll('[data-step-target]').forEach(b=>b.addEventListener('click',()=>stepNumericInput(b.dataset.stepTarget,Number(b.dataset.stepDelta),Number(b.dataset.stepMin),b.dataset.stepMax!==undefined?Number(b.dataset.stepMax):Infinity,Number(b.dataset.stepDec))));if($('estCompMode'))$('estCompMode').onchange=()=>{if($('tarEnergyMode')){$('tarEnergyMode').value=$('estCompMode').value==='annual'?'venta':($('estCompMode').value==='monthly_cap'?'compensacion':($('estCompMode').value==='none'?'none':$('tarEnergyMode').value))}syncEnergyMode()};['batDod','batEff','batPower','batCost','batMaint','batSmart'].forEach(id=>{if($(id))$(id).oninput=()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)}});['batteryMode','batteryExcPct','batteryConsPct','batSmart'].forEach(id=>{if($(id))$(id).addEventListener('change',()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)})});$('addCost').onclick=()=>{saveCost();cost.push([0,0]);renderCost()};$('resetCost').onclick=()=>{cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]];renderCost()};$('calcExc').onclick=()=>calcExc(true);$('calcEst').onclick=()=>study('manual');$('calcEstAuto').onclick=()=>study('auto');if($('topKwpMinus'))$('topKwpMinus').onclick=()=>stepKwp(-topKwpStep());
+document.querySelectorAll('.modeChoice').forEach(b=>b.onclick=()=>setExcessMode(b.dataset.mode));document.querySelectorAll('.storageChoice').forEach(b=>b.onclick=()=>{if($('batteryEnabled'))$('batteryEnabled').value=b.dataset.storage;syncEnergyMode();});initEstPex();$('applyTar').onclick=()=>{syncEstPex();saveTar();syncEnergyMode();};$('tarType').onchange=e=>{loadTariffDefaults(e.target.value);renderTar();syncEnergyMode()};if($('tarEnergyMode'))$('tarEnergyMode').onchange=e=>setExcessMode(e.target.value);if($('batteryEnabled'))$('batteryEnabled').onchange=syncEnergyMode;if($('topBatteryToggle'))$('topBatteryToggle').onchange=e=>{if($('batteryEnabled'))$('batteryEnabled').value=e.target.checked?'yes':'no';syncEnergyMode()};if($('batteryMode'))$('batteryMode').onchange=syncEnergyMode;['batteryExcPct','batteryConsPct','topBatteryUnits','pex'].forEach(id=>{if($(id))$(id).addEventListener('input',syncEnergyMode)});document.querySelectorAll('[data-step-target]').forEach(b=>b.addEventListener('click',()=>stepNumericInput(b.dataset.stepTarget,Number(b.dataset.stepDelta),Number(b.dataset.stepMin),b.dataset.stepMax!==undefined?Number(b.dataset.stepMax):Infinity,Number(b.dataset.stepDec))));if($('estCompMode'))$('estCompMode').onchange=()=>{if($('tarEnergyMode')){$('tarEnergyMode').value=$('estCompMode').value==='annual'?'venta':($('estCompMode').value==='monthly_cap'?'compensacion':($('estCompMode').value==='none'?'none':$('tarEnergyMode').value))}syncEnergyMode()};['batDod','batEff','batPower','batCost','batMaint','batSmart'].forEach(id=>{if($(id))$(id).oninput=()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)}});['batteryMode','batteryExcPct','batteryConsPct','batSmart'].forEach(id=>{if($(id))$(id).addEventListener('change',()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)})});$('addCost').onclick=()=>{saveCost();cost.push([0,0]);renderCost()};$('resetCost').onclick=()=>{cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]];renderCost()};$('calcExc').onclick=()=>calcExc(true);if($('calcEst'))$('calcEst').onclick=()=>study('manual');$('calcEstAuto').onclick=()=>study('auto');if($('topKwpMinus'))$('topKwpMinus').onclick=()=>stepKwp(-topKwpStep());
 if($('topKwpPlus'))$('topKwpPlus').onclick=()=>stepKwp(topKwpStep());
 if($('topKwp')){$('topKwp').onchange=e=>setKwp(e.target.value);$('topKwp').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setKwp(e.target.value);e.target.blur();}};}
 
