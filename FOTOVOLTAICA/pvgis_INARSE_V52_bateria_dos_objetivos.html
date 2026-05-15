@@ -1736,6 +1736,18 @@ const STUDY_RANGE_MAX_POINTS=25;
 function estStep(){let r=defaultStudyRange();return isFinite(r.step)&&r.step>0?r.step:5}
 function adjEst(id,delta,min=0){let el=$(id);if(!el)return;let cur=num(el.value);if(!isFinite(cur))cur=0;let v=cur+delta;if(min!==null)v=Math.max(min,v);el.value=fmt(v,0)}
 function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return 1;return Math.max(1,Math.round(raw))}
+/*
+  Qué hace:
+    Normaliza una potencia FV para evitar acumulación de decimales residuales
+    al generar las filas del Estudio FV.
+  Parámetros:
+    v -> potencia FV en kWp que se quiere limpiar/redondear.
+  Qué devuelve:
+    La potencia en kWp redondeada a 6 decimales y nunca negativa.
+  En qué casos deberías modificarla:
+    Cuando cambie la precisión interna admitida para las potencias del estudio
+    o si se decide trabajar siempre con kWp enteros.
+*/
 function roundStudyKwp(v){return Math.max(0,Number((v||0).toFixed(6)))}
 /*
   Qué hace:
