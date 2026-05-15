@@ -1732,33 +1732,118 @@ function price(m,h){let p=mat[h][m-1],r=prices.find(x=>+x[0]===p);return r?+r[4]
 function calcExc(show=true){if(!G||!C){if(show)st('stExc','warn','Carga generación y consumo.');return}let rows=[],tp=0,tc=0,te=0,self=0,src=G.baseAvg||G.avg,csvBase=G.csvKwp||1,kwp=G.kwp||csvBase,scale=kwp/csvBase,spec=(G.baseTotal||0)/csvBase;for(let i=0;i<8760;i++){let r=src[i],g=r.kw*scale,c=C.arr[i].cons,grid=Math.max(c-g,0),e=Math.max(g-c,0),net=g-c;rows.push({...r,w:r.w*scale,kw:g,prod:g,cons:c,grid,exc:e,net});tp+=g;tc+=c;te+=e;self+=Math.min(g,c)}let expected=spec*kwp,bal=tp-tc,cov=tc>0?self/tc*100:0;E={rows,tp,tc,te,self,spec,kwp,expected,bal,cov};st('stExc','ok',`Balance actualizado. El mapa y el balance se calculan como Producción - Consumo. Producción usada = ${fg(spec,2)} kWh/kWp·año × ${fmt(kwp,2)} kWp = ${fg(expected,2)} kWh/año.`);$('sumExc').classList.add('hide');$('sumExc').innerHTML='';drawBalanceCharts(rows);$('excGraphs').classList.remove('hide');updateTopSummary()}
 
 const STUDY_RANGE_POINTS=20;
+const STUDY_RANGE_MAX_POINTS=25;
 function estStep(){let r=defaultStudyRange();return isFinite(r.step)&&r.step>0?r.step:5}
 function adjEst(id,delta,min=0){let el=$(id);if(!el)return;let cur=num(el.value);if(!isFinite(cur))cur=0;let v=cur+delta;if(min!==null)v=Math.max(min,v);el.value=fmt(v,0)}
 function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return 1;return Math.max(1,Math.round(raw))}
+function roundStudyKwp(v){return Math.max(0,Number((v||0).toFixed(6)))}
 /*
   Qué hace:
-    Genera una serie de potencias FV para la tabla comparativa del Estudio FV,
-    manteniendo siempre un número fijo de líneas.
+    Devuelve intervalos de potencia FV legibles para construir tablas de Estudio FV,
+    priorizando pasos redondos cuando permiten mantener aproximadamente 20-25 líneas.
   Parámetros:
-    opts.center   -> potencia central o de referencia que se quiere estudiar (kWp).
-    opts.step     -> intervalo entre potencias consecutivas (kWp).
-    opts.count    -> número total de líneas/potencias que debe devolver.
-    opts.minLimit -> potencia mínima admisible para la primera línea (kWp).
+    raw      -> intervalo objetivo calculado a partir del rango deseado (kWp).
+    minStep  -> intervalo mínimo admisible para evitar filas repetidas o demasiado densas.
+  Qué devuelve:
+    Un array de intervalos candidatos ordenados de menor a mayor, en kWp.
+  En qué casos deberías modificarla:
+    Cuando quieras cambiar qué se considera un intervalo “redondo” o permitir
+    más/menos granularidad en las potencias mostradas.
+*/
+function studyStepCandidates(raw,minStep=1){
+ if(!isFinite(raw)||raw<=0)raw=minStep;
+ minStep=Math.max(0.000001,minStep||1);
+ let vals=new Set(),baseExp=Math.floor(Math.log10(Math.max(raw,minStep)));
+ for(let e=baseExp-2;e<=baseExp+3;e++){
+  let p=Math.pow(10,e);
+  [1,1.25,1.5,2,2.5,5,7.5,10].forEach(m=>{let v=m*p;if(v>=minStep)vals.add(roundStudyKwp(v))});
+ }
+ vals.add(roundStudyKwp(Math.max(raw,minStep)));
+ return Array.from(vals).filter(v=>isFinite(v)&&v>0).sort((a,b)=>a-b);
+}
+/*
+  Qué hace:
+    Elige el intervalo de potencia que aproxima el rango a un número de filas
+    objetivo, permitiendo hasta un máximo de líneas y favoreciendo pasos redondos.
+  Parámetros:
+    min       -> primera potencia del rango (kWp).
+    max       -> límite superior mínimo que debe quedar cubierto (kWp).
+    count     -> número objetivo de filas.
+    maxCount  -> número máximo de filas permitido.
+  Qué devuelve:
+    Un objeto con step y count; count puede quedar entre count y maxCount si eso
+    permite usar un intervalo más legible.
+  En qué casos deberías modificarla:
+    Cuando cambie el criterio de adaptación de 20-25 filas o la prioridad entre
+    exactitud del rango e intervalos redondos.
+*/
+function chooseStudyStepForRows(min,max,count=STUDY_RANGE_POINTS,maxCount=STUDY_RANGE_MAX_POINTS){
+ let span=Math.max(0,num(max)-num(min));
+ count=Math.max(2,Math.round(num(count)||STUDY_RANGE_POINTS));
+ maxCount=Math.max(count,Math.round(num(maxCount)||count));
+ if(!(span>0))return {step:1,count:count};
+ let raw=span/(count-1),cands=studyStepCandidates(raw,Math.max(raw/8,0.1)),best=null;
+ cands.forEach(step=>{
+  let n=Math.ceil(span/step-1e-9)+1;
+  let inBand=n>=count&&n<=maxCount;
+  let score=(inBand?0:100000)+Math.abs(n-count)*100+Math.abs(step-raw)/raw;
+  if(!best||score<best.score)best={step,count:n,score};
+ });
+ if(!best||best.count>maxCount||best.count<count){
+  best={step:roundStudyKwp(raw),count:count,score:0};
+ }
+ return {step:best.step,count:best.count};
+}
+/*
+  Qué hace:
+    Genera una serie de potencias FV para la tabla comparativa del Estudio FV.
+    Puede construir el rango desde un centro y paso, o desde límites min/max;
+    en este segundo caso adapta el intervalo para obtener unas 20-25 líneas.
+  Parámetros:
+    opts.center    -> potencia central o de referencia que se quiere estudiar (kWp).
+    opts.min       -> potencia inicial explícita para la primera línea (kWp).
+    opts.max       -> potencia máxima mínima que debe cubrir la tabla (kWp).
+    opts.step      -> intervalo entre potencias consecutivas (kWp), opcional.
+    opts.count     -> número objetivo de líneas/potencias.
+    opts.maxCount  -> número máximo de líneas si se adapta el intervalo.
+    opts.minLimit  -> potencia mínima admisible para la primera línea (kWp).
+    opts.adaptCount -> si true, permite 20-25 filas priorizando intervalos redondos.
   Qué devuelve:
     Un objeto con min, max, step, target y count, listo para pasarlo a studyArray().
   En qué casos deberías modificarla:
     Cuando quieras cambiar el número de líneas de la comparativa, el criterio de
-    centrado de la potencia objetivo o la forma de limitar la potencia mínima.
+    centrado de la potencia objetivo o la forma de limitar/adaptar min, max y paso.
 */
 function buildStudyPowerRange(opts={}){
  let count=Math.max(1,Math.round(num(opts.count)||STUDY_RANGE_POINTS));
+ let maxCount=Math.max(count,Math.round(num(opts.maxCount)||count));
+ let minLimit=num(opts.minLimit);if(!isFinite(minLimit)||minLimit<=0)minLimit=1;
+ let explicitMin=num(opts.min),explicitMax=num(opts.max);
+ if(isFinite(explicitMin)&&isFinite(explicitMax)&&explicitMax>explicitMin){
+  let min=roundStudyKwp(Math.max(minLimit,explicitMin));
+  let max=Math.max(explicitMax,min);
+  let step=num(opts.step);
+  let finalCount=count;
+  if(!(isFinite(step)&&step>0)){
+   if(opts.adaptCount!==false){
+    let picked=chooseStudyStepForRows(min,max,count,maxCount);
+    step=picked.step;finalCount=picked.count;
+   }else{
+    step=(max-min)/Math.max(1,count-1);
+   }
+  }else{
+   step=Math.max(0.000001,step);
+   finalCount=Math.ceil((max-min)/step-1e-9)+1;
+  }
+  max=roundStudyKwp(min+step*(finalCount-1));
+  return {min,max,step:roundStudyKwp(step),target:num(opts.target)||min,count:finalCount};
+ }
  let step=niceManualStep(num(opts.step)||5);
  let center=num(opts.center);if(!isFinite(center)||center<=0)center=step*10;
- let minLimit=num(opts.minLimit);if(!isFinite(minLimit)||minLimit<=0)minLimit=1;
  let below=Math.floor(count/2),min=center-below*step;
  if(min<minLimit){let intervalsBelow=Math.max(0,Math.floor((center-minLimit)/step));min=center-intervalsBelow*step;}
  let max=min+step*(count-1);
- return {min,max,step,target:center,count};
+ return {min:roundStudyKwp(min),max:roundStudyKwp(max),step:roundStudyKwp(step),target:center,count};
 }
 function syncEstPex(){let ep=$('estPex'),p=$('pex');if(!ep||!p)return;let v=num(ep.value);if(isFinite(v)&&v>=0){p.value=ep.value}else{ep.value=p.value||0}}
 function initEstPex(){let ep=$('estPex'),p=$('pex');if(ep&&p){ep.value=p.value||ep.value||0;ep.oninput=()=>{let v=num(ep.value);if(isFinite(v)&&v>=0)p.value=ep.value};p.oninput=()=>{ep.value=p.value}}}
@@ -1767,8 +1852,65 @@ function studyCriterion(){return $('estCrit')?.value||'eq'}
 function selectEstCrit(code){if(!EST_CRITERIA.some(c=>c.code===code))code='eq';let el=$('estCrit');if(el)el.value=code;updateCriteriaActive();if(window.EST_HAS_RESULT&&G&&C)study(window.EST_LAST_MODE||'auto')}
 function updateCriteriaActive(){let crit=studyCriterion();document.querySelectorAll('#est [data-crit]').forEach(b=>b.classList.toggle('active',b.dataset.crit===crit))}
 function updateCriteriaCards(recs){updateCriteriaActive();EST_CRITERIA.forEach(c=>{let el=$('critRec_'+c.code),r=recs&&recs[c.code];if(el)el.innerHTML=r?`${fmt(r.k,0)} kWp`:'Pendiente'})}
-function defaultStudyRange(){
+/*
+  Qué hace:
+    Calcula el rango automático del Estudio FV a partir de los criterios técnicos
+    confirmados: la potencia que queda justo en el aprovechamiento mínimo y la
+    potencia con mayor VAN dentro de una búsqueda amplia previa.
+  Parámetros:
+    opts.base     -> potencia base del fichero de generación FV (kWp).
+    opts.years    -> años del análisis financiero.
+    opts.rate     -> tasa de descuento en tanto por uno.
+    opts.baseCost -> coste anual de compra de energía sin FV (€).
+  Qué devuelve:
+    Un objeto con min, max, step, target, count, kAprov y kVanMax para usarlo en
+    studyArray() y para informar del rango automático aplicado.
+  En qué casos deberías modificarla:
+    Cuando cambie el criterio automático de min/max del estudio, la amplitud de
+    la búsqueda previa o la interpretación del aprovechamiento mínimo.
+*/
+function buildAutoStudyRangeByCriteria(opts={}){
+ let fallbackBase=G?.csvKwp||G?.kwp||1,spec=((G?.baseTotal||G?.total||0)/fallbackBase)||0,targetRaw=spec>0?(C?.total||0)/spec:(G?.kwp||50);
+ let baseStep=targetRaw<200?5:targetRaw<1000?25:50,target=Math.max(1,Math.round(targetRaw/baseStep)*baseStep);
+ let fallback=buildStudyPowerRange({center:target,step:baseStep,count:STUDY_RANGE_POINTS,minLimit:1});
+ if(!G||!C||!(opts.years>0)||!isFinite(opts.rate)||!isFinite(opts.baseCost))return fallback;
+ let broadMax=Math.max(fallback.max,targetRaw*3,(G.kwp||target)*3,baseStep*(STUDY_RANGE_POINTS-1));
+ let broad=studyArray(1,broadMax,Math.max(1,broadMax/44),opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+ if(!broad.length)return fallback;
+ let finiteVan=broad.filter(x=>isFinite(x.van));
+ let bestVan=(finiteVan.length?finiteVan:broad).slice().sort((a,b)=>(isFinite(b.van)?b.van:-Infinity)-(isFinite(a.van)?a.van:-Infinity))[0]||broad[0];
+ let minAp=Math.max(0,Math.min(1,(num($('estAprovMin')?.value)||0)/100));
+ let kAprov=broad[0].k;
+ if(minAp>0){
+  let valid=broad.filter(x=>x.aprov>=minAp);
+  if(valid.length){
+   let lastValid=valid[valid.length-1],nextInvalid=broad.find(x=>x.k>lastValid.k&&x.aprov<minAp);
+   kAprov=nextInvalid?lastValid.k:broad[0].k;
+   if(nextInvalid){
+    let lo=lastValid.k,hi=nextInvalid.k,rowLo=lastValid;
+    for(let i=0;i<10;i++){
+     let mid=(lo+hi)/2,row=calcStudyRow(mid,opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+     if(row.aprov>=minAp){lo=mid;rowLo=row}else hi=mid;
+    }
+    kAprov=rowLo.k;
+   }
+  }else{
+   kAprov=broad[0].k;
+  }
+ }
+ let min=Math.max(1,kAprov),span=bestVan.k-min;
+ if(!(span>0))span=Math.max(baseStep*(STUDY_RANGE_POINTS-1),targetRaw*0.75,baseStep);
+ let max=bestVan.k+span;
+ let range=buildStudyPowerRange({min,max,target:bestVan.k,count:STUDY_RANGE_POINTS,maxCount:STUDY_RANGE_MAX_POINTS,minLimit:1,adaptCount:true});
+ range.kAprov=roundStudyKwp(kAprov);
+ range.kVanMax=roundStudyKwp(bestVan.k);
+ range.broadMin=roundStudyKwp(broad[0].k);
+ range.broadMax=roundStudyKwp(broad.at(-1).k);
+ return range;
+}
+function defaultStudyRange(opts={}){
  if(!G||!C)return buildStudyPowerRange({center:50,step:5,count:STUDY_RANGE_POINTS,minLimit:1});
+ if(opts&&opts.useCriteria)return buildAutoStudyRangeByCriteria(opts);
  let csvBase=G.csvKwp||G.kwp||1,spec=(G.baseTotal||G.total||0)/csvBase,targetRaw=spec>0?C.total/spec:(G.kwp||50);
  let step=targetRaw<200?5:targetRaw<1000?25:50,target=Math.max(1,Math.round(targetRaw/step)*step);
  return buildStudyPowerRange({center:target,step,count:STUDY_RANGE_POINTS,minLimit:1});
@@ -2355,7 +2497,7 @@ function studyRowHtml(x,rec,recs){
   let battCell=hasBattery()?`<td class="right">${x.battCapUnreachable?'No alcanzable':((x.battUnits||0)+' uds · '+numCell(x.battCapInstalled||x.battCapCalc||0,0)+' kWh')}${x.battCapWarning?' ⚠':''}</td>`:'';
   return `<tr class="${cls.join(' ')}"><td>${fmt(x.k,0)} kWp${tags}</td><td class="right">${numCell(x.prod,0)}</td><td class="right">${numCell(C?.total||0,0)}</td><td class="right">${numCell(x.self,0)}</td><td class="right">${numCell(x.grid,0)}</td><td class="right">${fmtPct(x.aprov,1)}</td><td class="right">${numCell(x.exc,0)}</td><td class="right">${euro(x.excVal||0,0)}</td><td class="right">${fmt(x.priceWp,2)}</td><td class="right">${euro(x.cost,0)}</td><td class="right">${euro(x.sav,0)}</td><td class="right">${fmtPct(x.ahPct,1)}</td><td class="right">${fmt(x.pb,2)}</td><td class="right">${euro(x.van,0)}</td><td class="right">${fmtPct(x.tir,1)}</td>${battCell}<td class="right">${isFinite(x.invMarg)?euro(x.invMarg,0):'-'}</td><td class="right">${isFinite(x.savMarg)?euro(x.savMarg,0):'-'}</td><td class="right">${isFinite(x.pbMarg)?fmt(x.pbMarg,2):'-'}</td><td class="right">${fmt(x.idxTec*100,2)} %</td></tr>`
 }
-function globalStudyRecommendation(base,years,rate,baseCost){let r=defaultStudyRange(),step=r.step,broad=studyArray(r.min,r.max,step,base,years,rate,baseCost),recs=studyRecs(broad),rec=recs[studyCriterion()]||recs.eq;return {r,step,broad,recs,rec}}
+function globalStudyRecommendation(base,years,rate,baseCost){let r=defaultStudyRange({useCriteria:true,base,years,rate,baseCost}),step=r.step,broad=studyArray(r.min,r.max,step,base,years,rate,baseCost),recs=studyRecs(broad),rec=recs[studyCriterion()]||recs.eq;return {r,step,broad,recs,rec}}
 function nearestStudyRow(arr,k){return arr.reduce((a,b)=>Math.abs(b.k-k)<Math.abs(a.k-k)?b:a,arr[0])}
 
 function study(mode='manual'){
@@ -2363,7 +2505,7 @@ function study(mode='manual'){
  syncEstPex();
  saveTar();
  saveCost();
- let r=defaultStudyRange(),base=G.kwp||1,years=Math.max(1,Math.round(num($('estYears').value)||15)),rate=(num($('estDisc').value)||0)/100,baseCost=studyBaseCost(),min,max,step,arr,rec,autoMeta=null,crit=studyCriterion();
+ let base=G.kwp||1,years=Math.max(1,Math.round(num($('estYears').value)||15)),rate=(num($('estDisc').value)||0)/100,baseCost=studyBaseCost(),r=defaultStudyRange({useCriteria:mode==='auto',base,years,rate,baseCost}),min,max,step,arr,rec,autoMeta=null,crit=studyCriterion();
  $('estYears').value=fmt(years,0);
  window.EST_LAST_MODE=mode;
  window.EST_HAS_RESULT=true;
@@ -2377,14 +2519,14 @@ function study(mode='manual'){
   rec=recs[crit]||pickStudy(arr,crit);
   window.EST_GLOBAL_REC=rec;
   window.EST_GLOBAL_RECS=recs;
-  autoMeta={min,max,step,broadMin:min,broadMax:max,target:r.target,count:r.count};
+  autoMeta={min,max,step,broadMin:r.broadMin||min,broadMax:r.broadMax||max,target:r.target,count:r.count,kAprov:r.kAprov,kVanMax:r.kVanMax};
   if($('estManualKwp'))$('estManualKwp').value=fmt(rec.k,0);
   updateCriteriaCards(recs);
-  if($('estAutoInfo'))$('estAutoInfo').innerHTML=`Búsqueda automática de <b>${STUDY_RANGE_POINTS}</b> líneas: de <b>${fmt(min,0)}</b> a <b>${fmt(max,0)} kWp</b>, con paso de <b>${fmt(step,0)} kWp</b>.`;
+  if($('estAutoInfo'))$('estAutoInfo').innerHTML=`Búsqueda automática de <b>${arr.length}</b> líneas: de <b>${fmt(min,0)}</b> a <b>${fmt(max,0)} kWp</b>, con paso de <b>${fmt(step,0)} kWp</b>.`;
   $('estAutoRec').innerHTML=`Recomendada automática (${esc((EST_CRITERIA.find(c=>c.code===crit)||EST_CRITERIA[0]).name)}): <b>${fmt(rec.k,0)} kWp</b>.`;
   if($('estManualRec'))$('estManualRec').innerHTML=`El cálculo manual queda preparado con la potencia recomendada: <b>${fmt(rec.k,0)} kWp</b>. Puedes sustituirla por cualquier kWp a comprobar.`;
   renderStudyResult(arr,rec,years,mode,autoMeta,recs);
-  st('stEst','ok',`Cálculo automático realizado con ${STUDY_RANGE_POINTS} líneas de comparativa.`);
+  st('stEst','ok',`Cálculo automático realizado con ${arr.length} líneas de comparativa.`);
  }else{
   let target=num($('estManualKwp')?.value);
   if(!isFinite(target)||target<=0)target=(window.EST_GLOBAL_REC&&isFinite(window.EST_GLOBAL_REC.k))?window.EST_GLOBAL_REC.k:r.target;
@@ -2398,10 +2540,10 @@ function study(mode='manual'){
   let localRecs=studyRecs(arr);
   rec=localRecs[crit]||pickStudy(arr,crit);
   updateCriteriaCards(localRecs);
-  if($('estManualRec'))$('estManualRec').innerHTML=`Comprobación manual centrada en <b>${fmt(target,0)} kWp</b>. Comparativa interna: <b>${fmt(min,0)}-${fmt(max,0)} kWp</b>, paso <b>${fmt(step,0)} kWp</b>, <b>${STUDY_RANGE_POINTS}</b> líneas. Recomendada dentro de esa comparativa: <b>${fmt(rec.k,0)} kWp</b>.`;
+  if($('estManualRec'))$('estManualRec').innerHTML=`Comprobación manual centrada en <b>${fmt(target,0)} kWp</b>. Comparativa interna: <b>${fmt(min,0)}-${fmt(max,0)} kWp</b>, paso <b>${fmt(step,0)} kWp</b>, <b>${arr.length}</b> líneas. Recomendada dentro de esa comparativa: <b>${fmt(rec.k,0)} kWp</b>.`;
   if($('estAutoRec'))$('estAutoRec').innerHTML=`Último cálculo manual: <b>${fmt(rec.k,0)} kWp</b>. Pulsa “Calcular recomendada” para rehacer la búsqueda automática.`;
   renderStudyResult(arr,rec,years,mode,autoMeta,localRecs);
-  st('stEst','ok',`Cálculo manual realizado con ${STUDY_RANGE_POINTS} líneas de comparativa alrededor de la potencia indicada.`);
+  st('stEst','ok',`Cálculo manual realizado con ${arr.length} líneas de comparativa alrededor de la potencia indicada.`);
  }
 }
 /*
