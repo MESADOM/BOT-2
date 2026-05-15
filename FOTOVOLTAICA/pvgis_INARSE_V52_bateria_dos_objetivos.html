@@ -863,6 +863,45 @@ main{padding:100px 24px 24px 48px!important;}
 }
 
 
+/* DATOS DE PARTIDA/TARIFA - ajuste visual técnico 1.1/1.2 y tarifa */
+#tar .dataStartGrid{display:grid;grid-template-columns:repeat(2,minmax(280px,1fr));gap:14px;align-items:stretch;margin-bottom:14px}
+#tar .dataStartGrid .dataSection{height:100%;margin:0!important}
+#tar .dataSection.modalidadSection,
+#tar .dataSection.storageSection{border:1px solid #d9e2ec!important;border-left:1px solid #d9e2ec!important;background:#ffffff!important;box-shadow:0 8px 22px rgba(15,23,42,.06)!important}
+#tar .modalidadSection h2 .num,
+#tar .modalidadSection h2,
+#tar .storageSection h2 .num,
+#tar .storageSection h2{color:#18324a!important}
+#tar .simpleModalidadSection .modeChoiceGrid,
+#tar .storageChoiceGrid{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important;margin:0 0 10px!important}
+#tar .simpleModalidadSection .modeChoice,
+#tar .storageChoice{min-height:54px!important;padding:10px 12px!important;border:1px solid #cbd5e1!important;border-radius:10px!important;background:#fff!important;box-shadow:none!important;color:#172033!important}
+#tar .simpleModalidadSection .modeChoice:before,
+#tar .storageChoice:before{display:none!important}
+#tar .simpleModalidadSection .modeChoice strong,
+#tar .storageChoice strong{font-size:13px!important;line-height:1.15!important;color:#172033!important}
+#tar .storageChoice span{display:none!important}
+#tar .simpleModalidadSection .modeChoice.active,
+#tar .storageChoice.active{background:#eef4ff!important;border-color:#2563eb!important;color:#0f3f8f!important;box-shadow:inset 0 0 0 1px #2563eb!important}
+#tar .simpleModalidadSection .modeChoice.active:after,
+#tar .storageChoice.active:after{content:'✓';position:absolute;right:9px;top:8px;width:18px;height:18px;display:inline-flex;align-items:center;justify-content:center;border:0;background:#2563eb;color:#fff;border-radius:999px;padding:0;font-size:11px;font-weight:950}
+#tar .simpleModalidadSection .modeChoice.active strong,
+#tar .storageChoice.active strong{color:#0f3f8f!important}
+#tar .simpleModalidadSection .excessInlineControls.priceOnlyControls{gap:10px!important;flex-wrap:wrap!important;border-top:1px solid #e2e8f0!important}
+#tar .simpleModalidadSection .priceOnlyField label,
+#tar .simpleModalidadSection .priceOnlyField span{color:#475569!important}
+#tar .simpleModalidadSection .priceOnlyField input{border-bottom-color:#94a3b8!important;color:#172033!important}
+#tar .excessPriceNote{font-size:11px;font-weight:800;color:#64748b;background:#f8fafc;border:1px solid #e2e8f0;border-radius:999px;padding:6px 10px}
+#tar .tarTotalInput{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+#tar .tarTotalInput input{width:110px;text-align:right}
+#tar .tarStepBtn{width:26px;height:26px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;color:#334155;font-weight:950;line-height:1;box-shadow:none;padding:0}
+#tar .tarStepBtn:hover{background:#eef4ff;border-color:#94a3b8}
+#tar .tarStepBtn:disabled{opacity:.35;cursor:not-allowed}
+#tar .tarFixedBadge{display:inline-flex;border:1px solid #dbe7f4;border-radius:999px;padding:3px 7px;background:#f8fafc;color:#64748b;font-size:10px;font-weight:950;text-transform:uppercase;letter-spacing:.02em}
+#tar input.tarReadonly{background:#f8fafc;color:#64748b;border-color:#e2e8f0}
+@media(max-width:900px){#tar .dataStartGrid{grid-template-columns:1fr}#tar .simpleModalidadSection .modeChoiceGrid,#tar .storageChoiceGrid{grid-template-columns:1fr!important}}
+
+
 
 /* V19 - Consumo: selector de unidad limpio, sin recuadros ni colores */
 #cons .consDropGrid{
@@ -1385,17 +1424,7 @@ main{padding:100px 24px 24px 48px!important;}
   <div class="consDropMain"><h2>Arrastra aquí el consumo</h2><p class="mut">Columnas esperadas: FECHA, HORA, CONSUMO. Admite CSV y XLSX. Fechas válidas: 01/01, 01-01, 01.01, 01/01/2025, 2025-01-01 o fecha real de Excel.</p><label class="file" for="consFile">Seleccionar consumo</label><input id="consFile" class="hide" type="file" accept=".csv,.txt,.xlsx"></div>
 </div></div><div id="stCons" class="status"></div><div id="metCons" class="note hide"></div><div id="sumCons" class="summary hide"></div></div><div class="card"><h2>Mapa de color del consumo</h2><div id="heatCons" class="heat"><table><tbody><tr><td class="mut" style="padding:14px">Carga un archivo.</td></tr></tbody></table></div></div><div class="card"><h2>Consumo reconstruido</h2><div class="table"><table id="tabCons"><thead><tr><th>Nº</th><th>Fecha</th><th>Hora</th><th class="right">Consumo kWh</th></tr></thead><tbody><tr><td colspan="4" class="mut">Carga un archivo.</td></tr></tbody></table></div></div></section>
 <section id="tar" class="tab">
-  <div class="card">
-    <h2>Datos de partida</h2>
-    <div class="note">Configura aquí los datos fijos del estudio: modalidad económica, tarifa eléctrica y costes de instalación FV.</div>
-    <div class="dataIntro">
-      <div class="dataChip"><b>1.1 Tratamiento de excedentes</b>Define venta o compensación y sus condiciones económicas.</div>
-      <div class="dataChip"><b>1.2 Almacenamiento</b>Define si el estudio se realiza sin baterías o con baterías.</div>
-      <div class="dataChip"><b><span id="chipNumTarifa">1.3</span> Tarifa eléctrica</b>Calendario horario, precios por periodo y precio de excedentes.</div>
-      <div class="dataChip"><b><span id="chipNumCoste">1.4</span> Costes FV</b>Coste por tramo de potencia y parámetros económicos del estudio.</div>
-    </div>
-  </div>
-
+  <div class="dataStartGrid">
   <div class="card dataSection modalidadSection simpleModalidadSection">
     <h2><span class="num">1.1</span> Tratamiento de excedentes</h2>
 
@@ -1407,6 +1436,7 @@ main{padding:100px 24px 24px 48px!important;}
     <div class="excessInlineControls priceOnlyControls">
       <div id="tarEnergyModeField" class="excessHiddenField"><label>Tratamiento de excedentes</label><select id="tarEnergyMode"><option value="venta">Venta de excedentes</option><option value="compensacion" selected>Compensación de excedentes</option></select></div>
       <div class="priceOnlyField"><label>Precio excedentes</label><input id="pex" type="number" step="0.0001" value="0.05"><span>€/kWh</span></div>
+      <div class="excessPriceNote">Si no hay compensación de excedentes, poner precio 0&nbsp;€.</div>
     </div>
   </div>
 
@@ -1422,10 +1452,11 @@ main{padding:100px 24px 24px 48px!important;}
     </div>
     <div id="batteryEnabledField" class="dataField"><label>Almacenamiento</label><select id="batteryEnabled"><option value="no" selected>Sin baterías</option><option value="yes">Con baterías</option></select></div>
   </div>
+  </div>
 
     <div class="card dataSection">
     <h2><span class="num" id="numTarifa">1.3</span> Tarifa eléctrica</h2>
-    <div class="toolbar"><span class="pill">Tipo tarifa <select id="tarType"><option value="61">6.1 TD</option><option value="30">3.0 TD</option><option value="custom">Personalizada</option></select></span><button id="applyTar">Aplicar datos de partida</button></div>
+    <div class="toolbar"><span class="pill">Tipo tarifa <select id="tarType"><option value="61">6.1 TD</option><option value="30">3.0 TD</option><option value="custom">Personalizada</option><option value="isolated">Aislada con grupo electrógeno</option></select></span><button id="applyTar">Aplicar datos de partida</button></div>
     <div class="dataGrid2">
       <div><div class="dataSubTitle">Calendario horario de periodos</div><div class="table"><table id="tm" class="edit"></table></div></div>
       <div><div class="dataSubTitle">Precios por periodo</div><div class="table"><table id="tp" class="edit"></table></div></div>
@@ -1526,7 +1557,13 @@ main{padding:100px 24px 24px 48px!important;}
 </main><script>
 'use strict';const M=['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'],MS=['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'],D=[31,28,31,30,31,30,31,31,30,31,30,31];
 const MAT61=[[2,2,3,5,5,4,2,4,4,5,3,2],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[6,6,6,6,6,6,6,6,6,6,6,6],[2,2,3,5,5,4,4,4,4,5,3,2],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[2,2,3,5,5,4,2,4,4,5,3,2],[2,2,3,5,5,4,2,4,4,5,3,2],[2,2,3,5,5,4,2,4,4,5,3,2],[2,2,3,5,5,4,2,4,4,5,3,2],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[1,1,2,4,4,3,1,3,3,4,2,1],[2,2,3,5,5,4,2,4,4,5,3,2]];
-let mat=JSON.parse(JSON.stringify(MAT61)),prices=[['1',0.004622,0.106674,0.050891,0.07086705],['2',0.004023,0.264211,0.039222,0.07086705],['3',0.003817,0.249627,0.021931,0.07086705],['4',0.003725,0.245101,0.012193,0.07086705],['5',0.003740,0.224463,0.004437,0.07086705],['6',0.003512,0.203660,0.002892,0.07086705]],cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]],G=null,C=null,E=null,S=null;
+const MAT30=JSON.parse(JSON.stringify(MAT61)),MAT_ISOLATED=Array.from({length:24},()=>Array(12).fill(1));
+const TAR_FIXED_PRICES={
+  '61':[['1',0,0,0,0.07086705],['2',0,0,0,0.07086705],['3',0,0,0,0.07086705],['4',0,0,0,0.07086705],['5',0,0,0,0.07086705],['6',0,0,0,0.07086705]],
+  '30':[['1',0,0,0,0.161187],['2',0,0,0,0.147593],['3',0,0,0,0.126585],['4',0,0,0,0.116019],['5',0,0,0,0.099070],['6',0,0,0,0.087463]],
+  'isolated':[['1',0,0,0,0.45]]
+};
+let mat=JSON.parse(JSON.stringify(MAT61)),prices=JSON.parse(JSON.stringify(TAR_FIXED_PRICES['61'])),cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]],G=null,C=null,E=null,S=null;
 const $=id=>document.getElementById(id),p2=n=>String(n).padStart(2,'0'),fmt=(n,d=2)=>isFinite(n)?Number(n).toFixed(d):'-',fg=(n,d=2)=>isFinite(n)?Number(n).toLocaleString('es-ES',{minimumFractionDigits:d,maximumFractionDigits:d}):'-',hfmt=n=>{if(!isFinite(n)||Math.abs(n)<1e-9)return '0';let a=Math.abs(n);return a<10?Number(n).toLocaleString('es-ES',{minimumFractionDigits:2,maximumFractionDigits:2,useGrouping:false}):a<100?Number(n).toLocaleString('es-ES',{minimumFractionDigits:1,maximumFractionDigits:1,useGrouping:false}):Math.round(Number(n)).toLocaleString('es-ES',{maximumFractionDigits:0,useGrouping:false})},num=x=>{let s=String(x??'').trim().replace(/\s/g,'');if(!s)return NaN;if(s.includes(',')&&s.includes('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(',','.');return Number(s)},norm=s=>String(s??'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().trim(),key=(m,d,h)=>`${p2(m)}-${p2(d)}-${p2(h)}`;
 
 function topMWh(kwh){return isFinite(kwh)?fg(kwh/1000,1)+' MWh':'—'}
@@ -1726,8 +1763,70 @@ async function xlsx(buf){if(!('DecompressionStream'in window))throw Error('Este 
 function zip(b){let v=new DataView(b),e=-1;for(let i=b.byteLength-22;i>Math.max(0,b.byteLength-66000);i--)if(v.getUint32(i,true)===0x06054b50){e=i;break}if(e<0)throw Error('XLSX no válido.');let n=v.getUint16(e+10,true),p=v.getUint32(e+16,true),o={};for(let i=0;i<n;i++){let nl=v.getUint16(p+28,true),el=v.getUint16(p+30,true),cl=v.getUint16(p+32,true),name=new TextDecoder().decode(new Uint8Array(b,p+46,nl));o[name]={b,method:v.getUint16(p+10,true),size:v.getUint32(p+20,true),loc:v.getUint32(p+42,true)};p+=46+nl+el+cl}return o}
 async function ztext(e,n){let x=e[n],v=new DataView(x.b,x.loc),nl=v.getUint16(26,true),el=v.getUint16(28,true),start=x.loc+30+nl+el,bytes=new Uint8Array(x.b,start,x.size);if(x.method===8){let ds=new DecompressionStream('deflate-raw');bytes=new Uint8Array(await new Response(new Blob([bytes]).stream().pipeThrough(ds)).arrayBuffer())}return new TextDecoder().decode(bytes)}
 function shared(xml){let d=new DOMParser().parseFromString(xml,'application/xml');return[...d.getElementsByTagName('si')].map(si=>[...si.getElementsByTagName('t')].map(t=>t.textContent).join(''))}function col(s){let n=0;for(let c of s)n=n*26+c.charCodeAt(0)-64;return n-1}function sheetRows(xml,ss){let d=new DOMParser().parseFromString(xml,'application/xml'),out=[];[...d.getElementsByTagName('row')].forEach(r=>{let a=[];[...r.getElementsByTagName('c')].forEach(c=>{let i=col((c.getAttribute('r')||'A').match(/[A-Z]+/)[0]),t=c.getAttribute('t'),v=c.getElementsByTagName('v')[0]?.textContent||'';a[i]=t==='s'?ss[+v]||'':(isFinite(Number(v))&&v!==''?Number(v):v)});out.push(a.map(x=>x??''))});return out}
-function renderTar(){let h='<thead><tr><th>Hora</th>'+M.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';for(let i=0;i<24;i++){h+=`<tr><th>${p2(i)}:00</th>`;for(let j=0;j<12;j++){let p=mat[i][j];h+=`<td class="period${p}"><input data-h="${i}" data-m="${j}" value="${p}" type="number" min="1" max="6"></td>`}h+='</tr>'}$('tm').innerHTML=h+'</tbody>';h='<thead><tr><th>Periodo</th><th>Energía</th><th>Variable</th><th>Peaje</th><th>TOTAL</th></tr></thead><tbody>';prices.forEach((r,i)=>{h+=`<tr><th class="period${r[0]}">${r[0]}</th>`;for(let c=1;c<5;c++)h+=`<td><input data-p="${i}" data-c="${c}" value="${r[c]}" type="number" step="0.000001"></td>`;h+='</tr>'});$('tp').innerHTML=h+'</tbody>'}
-function saveTar(){document.querySelectorAll('[data-h]').forEach(i=>mat[+i.dataset.h][+i.dataset.m]=Math.max(1,Math.min(6,Math.round(num(i.value)||6))));document.querySelectorAll('[data-p]').forEach(i=>prices[+i.dataset.p][+i.dataset.c]=num(i.value)||0);renderTar()}
+/*
+  Qué hace:
+    Devuelve la definición de calendario, precios y editabilidad para el tipo de tarifa seleccionado.
+  Parámetros:
+    type -> cadena con el valor del selector de tarifa ('61', '30', 'custom' o 'isolated').
+  Qué devuelve:
+    Un objeto con matrix, priceRows, editableCalendar y editablePrices para renderizar y guardar la tarifa.
+  En qué casos deberías modificarla:
+    Cuando se añadan nuevos tipos de tarifa, cambien los valores fijos o se modifique qué tarifas son editables.
+*/
+function getTariffDefinition(type){
+  if(type==='30')return {matrix:MAT30,priceRows:TAR_FIXED_PRICES['30'],editableCalendar:false,editablePrices:false};
+  if(type==='isolated')return {matrix:MAT_ISOLATED,priceRows:TAR_FIXED_PRICES.isolated,editableCalendar:false,editablePrices:true};
+  if(type==='custom')return {matrix:mat,priceRows:prices,editableCalendar:true,editablePrices:true};
+  return {matrix:MAT61,priceRows:TAR_FIXED_PRICES['61'],editableCalendar:false,editablePrices:false};
+}
+/*
+  Qué hace:
+    Aplica al estado de tarifa la matriz y los precios asociados al tipo seleccionado.
+  Parámetros:
+    type -> cadena con el valor del selector de tarifa.
+  Qué devuelve:
+    No devuelve valor; actualiza las variables globales mat y prices utilizadas por el cálculo de precios.
+  En qué casos deberías modificarla:
+    Cuando el cambio de tarifa requiera transformar precios existentes, conservar estados personalizados o cargar datos externos.
+*/
+function applyTariffType(type){
+  let def=getTariffDefinition(type);
+  if(type!=='custom'){
+    mat=JSON.parse(JSON.stringify(def.matrix));
+    prices=JSON.parse(JSON.stringify(def.priceRows));
+  }
+}
+/*
+  Qué hace:
+    Indica si la tarifa actualmente seleccionada permite editar calendario horario y precios por periodo.
+  Parámetros:
+    No recibe parámetros; lee el selector tarType del DOM.
+  Qué devuelve:
+    Un objeto con editableCalendar y editablePrices.
+  En qué casos deberías modificarla:
+    Cuando cambien las reglas de bloqueo visual o se añadan modos con editabilidad parcial.
+*/
+function currentTariffEditState(){
+  let def=getTariffDefinition($('tarType')?.value||'61');
+  return {editableCalendar:def.editableCalendar,editablePrices:def.editablePrices};
+}
+/*
+  Qué hace:
+    Ajusta con botones +/− el precio total editable de una fila de tarifa.
+  Parámetros:
+    idx -> índice de la fila de precios; delta -> incremento en €/kWh que se suma al total.
+  Qué devuelve:
+    No devuelve valor; actualiza prices y vuelve a dibujar la tabla de tarifa.
+  En qué casos deberías modificarla:
+    Cuando se cambie el tamaño del paso de edición, el redondeo o la forma visual de ajustar precios.
+*/
+function stepTarTotal(idx,delta){
+  if(!prices[idx])return;
+  prices[idx][4]=Math.max(0,+(num(prices[idx][4])+delta).toFixed(6));
+  renderTar();
+}
+function renderTar(){let edit=currentTariffEditState(),h='<thead><tr><th>Hora</th>'+M.map(x=>`<th>${x}</th>`).join('')+'</tr></thead><tbody>';for(let i=0;i<24;i++){h+=`<tr><th>${p2(i)}:00</th>`;for(let j=0;j<12;j++){let p=mat[i][j],dis=edit.editableCalendar?'':' disabled';h+=`<td class="period${p}"><input data-h="${i}" data-m="${j}" value="${p}" type="number" min="1" max="6" class="${edit.editableCalendar?'':'tarReadonly'}"${dis}></td>`}h+='</tr>'}$('tm').innerHTML=h+'</tbody>';h='<thead><tr><th>Periodo</th><th>Total</th></tr></thead><tbody>';prices.forEach((r,i)=>{let dis=edit.editablePrices?'':' disabled',badge=edit.editablePrices?'':` <span class="tarFixedBadge">Fija</span>`,minus=edit.editablePrices?`<button type="button" class="tarStepBtn" onclick="stepTarTotal(${i},-0.01)">−</button>`:'',plus=edit.editablePrices?`<button type="button" class="tarStepBtn" onclick="stepTarTotal(${i},0.01)">+</button>`:'';h+=`<tr><th class="period${r[0]}">${r[0]}${badge}</th><td><div class="tarTotalInput">${minus}<input data-p="${i}" data-c="4" value="${r[4]}" type="number" step="0.000001" class="${edit.editablePrices?'':'tarReadonly'}"${dis}>${plus}</div></td></tr>`});$('tp').innerHTML=h+'</tbody>'}
+function saveTar(){document.querySelectorAll('[data-h]').forEach(i=>{if(!i.disabled)mat[+i.dataset.h][+i.dataset.m]=Math.max(1,Math.min(6,Math.round(num(i.value)||6)))});document.querySelectorAll('[data-p]').forEach(i=>{if(!i.disabled)prices[+i.dataset.p][+i.dataset.c]=num(i.value)||0});renderTar()}
 function price(m,h){let p=mat[h][m-1],r=prices.find(x=>+x[0]===p);return r?+r[4]||0:0}function renderCost(){cost.sort((a,b)=>a[0]-b[0]);$('ct').innerHTML='<thead><tr><th>Potencia FV (kWp)</th><th>PVP (€/Wp)</th><th></th></tr></thead><tbody>'+cost.map((r,i)=>`<tr><td><input data-ci="${i}" data-cc="0" value="${r[0]}" type="number" step="0.01"></td><td><input data-ci="${i}" data-cc="1" value="${r[1]}" type="number" step="0.01"></td><td class="center"><button onclick="delCost(${i})">×</button></td></tr>`).join('')+'</tbody>'}function saveCost(){document.querySelectorAll('[data-ci]').forEach(i=>cost[+i.dataset.ci][+i.dataset.cc]=num(i.value)||0);cost=cost.filter(r=>r[0]>0).sort((a,b)=>a[0]-b[0])}function priceWp(k){saveCost();if(k<=cost[0][0])return cost[0][1];for(let i=1;i<cost.length;i++)if(k<=cost[i][0]){let[a,b]=cost[i-1],[c,d]=cost[i];return b+(d-b)*(k-a)/(c-a)}return cost.at(-1)[1]}function inv(k){return k*1000*priceWp(k)}window.delCost=i=>{saveCost();cost.splice(i,1);renderCost()};
 function calcExc(show=true){if(!G||!C){if(show)st('stExc','warn','Carga generación y consumo.');return}let rows=[],tp=0,tc=0,te=0,self=0,src=G.baseAvg||G.avg,csvBase=G.csvKwp||1,kwp=G.kwp||csvBase,scale=kwp/csvBase,spec=(G.baseTotal||0)/csvBase;for(let i=0;i<8760;i++){let r=src[i],g=r.kw*scale,c=C.arr[i].cons,grid=Math.max(c-g,0),e=Math.max(g-c,0),net=g-c;rows.push({...r,w:r.w*scale,kw:g,prod:g,cons:c,grid,exc:e,net});tp+=g;tc+=c;te+=e;self+=Math.min(g,c)}let expected=spec*kwp,bal=tp-tc,cov=tc>0?self/tc*100:0;E={rows,tp,tc,te,self,spec,kwp,expected,bal,cov};st('stExc','ok',`Balance actualizado. El mapa y el balance se calculan como Producción - Consumo. Producción usada = ${fg(spec,2)} kWh/kWp·año × ${fmt(kwp,2)} kWp = ${fg(expected,2)} kWh/año.`);$('sumExc').classList.add('hide');$('sumExc').innerHTML='';drawBalanceCharts(rows);$('excGraphs').classList.remove('hide');updateTopSummary()}
 
@@ -2849,7 +2948,7 @@ function renderBatteryStudy(force){
     if(force&&box)box.className='hide'
   }
 }
-document.querySelectorAll('.modeChoice').forEach(b=>b.onclick=()=>{if($('tarEnergyMode'))$('tarEnergyMode').value=b.dataset.mode;syncEnergyMode();});document.querySelectorAll('.storageChoice').forEach(b=>b.onclick=()=>{if($('batteryEnabled'))$('batteryEnabled').value=b.dataset.storage;syncEnergyMode();});initEstPex();$('applyTar').onclick=()=>{syncEstPex();saveTar();syncEnergyMode();};$('tarType').onchange=e=>{if(e.target.value!=='custom')mat=JSON.parse(JSON.stringify(MAT61));renderTar()};if($('tarEnergyMode'))$('tarEnergyMode').onchange=syncEnergyMode;if($('batteryEnabled'))$('batteryEnabled').onchange=syncEnergyMode;if($('batteryMode'))$('batteryMode').onchange=syncEnergyMode;['batteryExcPct','batteryConsPct'].forEach(id=>{if($(id))$(id).oninput=syncEnergyMode});if($('estCompMode'))$('estCompMode').onchange=()=>{if($('tarEnergyMode')){$('tarEnergyMode').value=$('estCompMode').value==='annual'?'venta':($('estCompMode').value==='monthly_cap'?'compensacion':$('tarEnergyMode').value)}syncEnergyMode()};['batDod','batEff','batPower','batCost','batMaint','batSmart'].forEach(id=>{if($(id))$(id).oninput=()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)}});['batteryMode','batteryExcPct','batteryConsPct','batSmart'].forEach(id=>{if($(id))$(id).addEventListener('change',()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)})});$('addCost').onclick=()=>{saveCost();cost.push([0,0]);renderCost()};$('resetCost').onclick=()=>{cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]];renderCost()};$('calcExc').onclick=()=>calcExc(true);$('calcEst').onclick=()=>study('manual');$('calcEstAuto').onclick=()=>study('auto');if($('topKwpMinus'))$('topKwpMinus').onclick=()=>stepKwp(-topKwpStep());
+document.querySelectorAll('.modeChoice').forEach(b=>b.onclick=()=>{if($('tarEnergyMode'))$('tarEnergyMode').value=b.dataset.mode;syncEnergyMode();});document.querySelectorAll('.storageChoice').forEach(b=>b.onclick=()=>{if($('batteryEnabled'))$('batteryEnabled').value=b.dataset.storage;syncEnergyMode();});initEstPex();$('applyTar').onclick=()=>{syncEstPex();saveTar();syncEnergyMode();};$('tarType').onchange=e=>{applyTariffType(e.target.value);renderTar()};if($('tarEnergyMode'))$('tarEnergyMode').onchange=syncEnergyMode;if($('batteryEnabled'))$('batteryEnabled').onchange=syncEnergyMode;if($('batteryMode'))$('batteryMode').onchange=syncEnergyMode;['batteryExcPct','batteryConsPct'].forEach(id=>{if($(id))$(id).oninput=syncEnergyMode});if($('estCompMode'))$('estCompMode').onchange=()=>{if($('tarEnergyMode')){$('tarEnergyMode').value=$('estCompMode').value==='annual'?'venta':($('estCompMode').value==='monthly_cap'?'compensacion':$('tarEnergyMode').value)}syncEnergyMode()};['batDod','batEff','batPower','batCost','batMaint','batSmart'].forEach(id=>{if($(id))$(id).oninput=()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)}});['batteryMode','batteryExcPct','batteryConsPct','batSmart'].forEach(id=>{if($(id))$(id).addEventListener('change',()=>{if($('bat')?.classList.contains('act'))renderBatteryStudy(false)})});$('addCost').onclick=()=>{saveCost();cost.push([0,0]);renderCost()};$('resetCost').onclick=()=>{cost=[[1,0.80],[30,0.80],[48,0.80],[70,0.97],[120,0.92],[264,0.87],[500,0.82],[1000,0.76],[2000,0.71],[10000,0.69]];renderCost()};$('calcExc').onclick=()=>calcExc(true);$('calcEst').onclick=()=>study('manual');$('calcEstAuto').onclick=()=>study('auto');if($('topKwpMinus'))$('topKwpMinus').onclick=()=>stepKwp(-topKwpStep());
 if($('topKwpPlus'))$('topKwpPlus').onclick=()=>stepKwp(topKwpStep());
 if($('topKwp')){$('topKwp').onchange=e=>setKwp(e.target.value);$('topKwp').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();setKwp(e.target.value);e.target.blur();}};}
 
