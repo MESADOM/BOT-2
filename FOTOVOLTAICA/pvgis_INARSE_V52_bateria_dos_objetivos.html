@@ -1866,6 +1866,55 @@ function updateCriteriaActive(){let crit=studyCriterion();document.querySelector
 function updateCriteriaCards(recs){updateCriteriaActive();EST_CRITERIA.forEach(c=>{let el=$('critRec_'+c.code),r=recs&&recs[c.code];if(el)el.innerHTML=r?`${fmt(r.k,0)} kWp`:'Pendiente'})}
 /*
   Qué hace:
+    Calcula una fila ligera para decidir el rango automático del Estudio FV sin
+    aplicar batería, aunque la batería esté activada en la interfaz.
+  Parámetros:
+    k        -> potencia FV que se está tanteando (kWp).
+    base     -> potencia base del fichero de generación FV (kWp).
+    years    -> años del análisis financiero.
+    rate     -> tasa de descuento en tanto por uno.
+    baseCost -> coste anual de compra de energía sin FV (€).
+  Qué devuelve:
+    Un objeto con k, prod, self, aprov, cost, sav, pb, van y tir suficiente para
+    localizar kAprov y kVanMax durante la construcción del rango.
+  En qué casos deberías modificarla:
+    Cuando quieras que el rango automático dependa de otra referencia técnica
+    distinta de la FV sin batería; no la uses para cambiar el resultado final
+    del estudio, que sigue calculándose en calcStudyRow().
+*/
+function calcStudyRangeProbeRow(k,base,years,rate,baseCost){
+ let src=G.baseAvg||G.avg,csvBase=G.csvKwp||base||1,scale=k/csvBase,mode=compMode();
+ let flows=calcHourlyFlows(k,scale,src);
+ let exc5=calcExcedentesValue(flows.monExc,flows.monGrid,mode,flows.excGrossVal);
+ let sav=flows.selfVal+exc5.excVal,cost=inv(k),fin=calcFinancials(cost,sav,years,rate);
+ return {k,prod:flows.prod,self:flows.self,aprov:flows.prod?flows.self/flows.prod:0,cost,sav,pb:fin.pb,van:fin.van,tir:fin.tir};
+}
+/*
+  Qué hace:
+    Genera la búsqueda previa del rango automático usando filas de referencia FV
+    sin batería, para que una batería sobredimensionada no desplace el intervalo
+    hacia potencias FV artificialmente bajas.
+  Parámetros:
+    min      -> primera potencia a tantear (kWp).
+    max      -> última potencia a tantear (kWp).
+    step     -> intervalo de tanteo (kWp).
+    base     -> potencia base del fichero de generación FV (kWp).
+    years    -> años del análisis financiero.
+    rate     -> tasa de descuento en tanto por uno.
+    baseCost -> coste anual de compra de energía sin FV (€).
+  Qué devuelve:
+    Un array normalizado de filas ligeras para decidir min, max y step del rango.
+  En qué casos deberías modificarla:
+    Cuando cambie la resolución de la búsqueda previa o los indicadores usados
+    exclusivamente para construir el intervalo automático.
+*/
+function studyRangeProbeArray(min,max,step,base,years,rate,baseCost){
+ let arr=[];
+ for(let k=min;k<=max+step/1000;k+=step)arr.push(calcStudyRangeProbeRow(Number(k.toFixed(6)),base,years,rate,baseCost));
+ return normalizeStudy(arr);
+}
+/*
+  Qué hace:
     Calcula el rango automático del Estudio FV a partir de los criterios técnicos
     confirmados: la potencia que queda justo en el aprovechamiento mínimo y la
     potencia con mayor VAN dentro de una búsqueda amplia previa.
@@ -1887,7 +1936,7 @@ function buildAutoStudyRangeByCriteria(opts={}){
  let fallback=buildStudyPowerRange({center:target,step:baseStep,count:STUDY_RANGE_POINTS,minLimit:1});
  if(!G||!C||!(opts.years>0)||!isFinite(opts.rate)||!isFinite(opts.baseCost))return fallback;
  let broadMax=Math.max(fallback.max,targetRaw*3,(G.kwp||target)*3,baseStep*(STUDY_RANGE_POINTS-1));
- let broad=studyArray(1,broadMax,Math.max(1,broadMax/44),opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+ let broad=studyRangeProbeArray(1,broadMax,Math.max(1,broadMax/44),opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
  if(!broad.length)return fallback;
  let finiteVan=broad.filter(x=>isFinite(x.van));
  let bestVan=(finiteVan.length?finiteVan:broad).slice().sort((a,b)=>(isFinite(b.van)?b.van:-Infinity)-(isFinite(a.van)?a.van:-Infinity))[0]||broad[0];
@@ -1901,7 +1950,7 @@ function buildAutoStudyRangeByCriteria(opts={}){
    if(nextInvalid){
     let lo=lastValid.k,hi=nextInvalid.k,rowLo=lastValid;
     for(let i=0;i<10;i++){
-     let mid=(lo+hi)/2,row=calcStudyRow(mid,opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+     let mid=(lo+hi)/2,row=calcStudyRangeProbeRow(mid,opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
      if(row.aprov>=minAp){lo=mid;rowLo=row}else hi=mid;
     }
     kAprov=rowLo.k;
