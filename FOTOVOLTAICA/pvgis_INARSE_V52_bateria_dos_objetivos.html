@@ -1585,14 +1585,50 @@ const TEST_MODE_CONSUMPTION_FILE='PRUEBA CONSUMO.xlsx';
     path -> ruta relativa del archivo que se quiere cargar desde la misma carpeta del HTML.
     kind -> texto descriptivo del tipo de archivo, usado solo para mensajes de error.
   Qué devuelve:
-    La respuesta fetch válida para leerla como texto o ArrayBuffer.
+    Un objeto compatible con Response para leerlo como text() o arrayBuffer().
   En qué casos deberías modificarla:
     Si los archivos de prueba cambian de carpeta, si se sirve la aplicación desde otra base URL o si quieres añadir otra fuente de datos de prueba.
 */
 async function fetchTestModeFile(path,kind){
-  let res=await fetch(encodeURI(path),{cache:'no-store'});
-  if(!res.ok)throw Error('No se pudo cargar '+kind+' de prueba: '+path+' ('+res.status+').');
-  return res;
+  let url=new URL(path,document.baseURI).href;
+  try{
+    let res=await fetch(url,{cache:'no-store'});
+    if(!res.ok)throw Error('No se pudo cargar '+kind+' de prueba: '+path+' ('+res.status+').');
+    return res;
+  }catch(e){
+    if(location.protocol==='file:')return readTestModeFileWithXhr(url,path,kind,e);
+    throw Error('No se pudo cargar '+kind+' de prueba: '+path+'. Revisa que el archivo exista junto al HTML y se sirva desde el mismo origen. Detalle: '+(e&&e.message?e.message:e));
+  }
+}
+/*
+  Qué hace:
+    Intenta leer los archivos de prueba con XMLHttpRequest cuando el HTML se abre directamente como archivo local.
+  Qué parámetros recibe:
+    url -> URL absoluta resuelta respecto al HTML.
+    path -> ruta relativa mostrada al usuario en errores.
+    kind -> tipo de archivo para los mensajes.
+    originalError -> error previo de fetch para conservar el diagnóstico.
+  Qué devuelve:
+    Un objeto mínimo con text() y arrayBuffer() para que el modo prueba pueda seguir usando el mismo flujo.
+  En qué casos deberías modificarla:
+    Si se decide retirar el soporte local file:// o cambiar la estrategia de carga offline del modo prueba temporal.
+*/
+function readTestModeFileWithXhr(url,path,kind,originalError){
+  return new Promise((resolve,reject)=>{
+    let xhr=new XMLHttpRequest();
+    xhr.open('GET',url,true);
+    xhr.responseType='arraybuffer';
+    xhr.onload=()=>{
+      if(xhr.status&&xhr.status>=400){reject(Error('No se pudo cargar '+kind+' de prueba: '+path+' ('+xhr.status+').'));return}
+      let buf=xhr.response;
+      resolve({
+        text:()=>Promise.resolve(new TextDecoder().decode(buf)),
+        arrayBuffer:()=>Promise.resolve(buf)
+      });
+    };
+    xhr.onerror=()=>reject(Error('El navegador ha bloqueado la carga automática del modo prueba porque el HTML está abierto como archivo local (file://). Abre la herramienta desde un servidor local, por ejemplo: python3 -m http.server 8765, y entra en http://localhost:8765/FOTOVOLTAICA/pvgis_INARSE_V52_bateria_dos_objetivos.html. Detalle original: '+(originalError&&originalError.message?originalError.message:originalError)));
+    xhr.send();
+  });
 }
 /*
   Qué hace:
