@@ -1580,9 +1580,22 @@ const TEST_MODE_GENERATION_FILE='Timeseries_0.684_29.556_SA3_1800kWp_crystSi_8_6
 const TEST_MODE_CONSUMPTION_FILE='PRUEBA CONSUMO.xlsx';
 /*
   Qué hace:
-    Descarga un archivo local del repositorio para el modo prueba y valida que el navegador haya podido acceder a él.
+    Resuelve un archivo de prueba en la misma carpeta exacta en la que está abierto este HTML.
   Qué parámetros recibe:
-    path -> ruta relativa del archivo que se quiere cargar desde la misma carpeta del HTML.
+    fileName -> nombre del archivo de prueba, sin carpeta ni ruta adicional.
+  Qué devuelve:
+    La URL absoluta del archivo de prueba junto al HTML.
+  En qué casos deberías modificarla:
+    Si algún día los archivos de prueba dejan de estar en la misma carpeta del HTML o se mueven a una subcarpeta.
+*/
+function testModeSameFolderUrl(fileName){
+  return new URL(fileName,window.location.href).href;
+}
+/*
+  Qué hace:
+    Descarga un archivo local del repositorio para el modo prueba desde la misma carpeta del HTML y valida que el navegador haya podido acceder a él.
+  Qué parámetros recibe:
+    path -> nombre del archivo que se quiere cargar desde la misma carpeta del HTML.
     kind -> texto descriptivo del tipo de archivo, usado solo para mensajes de error.
   Qué devuelve:
     Un objeto compatible con Response para leerlo como text() o arrayBuffer().
@@ -1590,14 +1603,14 @@ const TEST_MODE_CONSUMPTION_FILE='PRUEBA CONSUMO.xlsx';
     Si los archivos de prueba cambian de carpeta, si se sirve la aplicación desde otra base URL o si quieres añadir otra fuente de datos de prueba.
 */
 async function fetchTestModeFile(path,kind){
-  let url=new URL(path,document.baseURI).href;
+  let url=testModeSameFolderUrl(path);
   try{
     let res=await fetch(url,{cache:'no-store'});
     if(!res.ok)throw Error('No se pudo cargar '+kind+' de prueba: '+path+' ('+res.status+').');
     return res;
   }catch(e){
     if(location.protocol==='file:')return readTestModeFileWithXhr(url,path,kind,e);
-    throw Error('No se pudo cargar '+kind+' de prueba: '+path+'. Revisa que el archivo exista junto al HTML y se sirva desde el mismo origen. Detalle: '+(e&&e.message?e.message:e));
+    throw Error('No se pudo cargar '+kind+' de prueba: '+path+'. Revisa que el archivo esté en la misma carpeta que este HTML y que se sirva desde el mismo origen. Detalle: '+(e&&e.message?e.message:e));
   }
 }
 /*
@@ -1626,7 +1639,7 @@ function readTestModeFileWithXhr(url,path,kind,originalError){
         arrayBuffer:()=>Promise.resolve(buf)
       });
     };
-    xhr.onerror=()=>reject(Error('El navegador ha bloqueado la carga automática del modo prueba porque el HTML está abierto como archivo local (file://). Abre la herramienta desde un servidor local, por ejemplo: python3 -m http.server 8765, y entra en http://localhost:8765/FOTOVOLTAICA/pvgis_INARSE_V52_bateria_dos_objetivos.html. Detalle original: '+(originalError&&originalError.message?originalError.message:originalError)));
+    xhr.onerror=()=>reject(Error('Los archivos de prueba se buscan en la misma carpeta que este HTML, pero el navegador ha bloqueado la lectura automática porque la página está abierta como archivo local (file://). Si te ocurre, abre esta misma carpeta con un servidor local, por ejemplo: python3 -m http.server 8765, y entra en http://localhost:8765/FOTOVOLTAICA/pvgis_INARSE_V52_bateria_dos_objetivos.html. Detalle original: '+(originalError&&originalError.message?originalError.message:originalError)));
     xhr.send();
   });
 }
