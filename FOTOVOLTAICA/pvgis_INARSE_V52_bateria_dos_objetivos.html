@@ -1344,10 +1344,10 @@ main{padding:100px 24px 24px 48px!important;}
 #bat .batteryGoalCardPct.active{background:#f5f8ff!important;border-color:#9eb8f2!important;box-shadow:inset 0 0 0 2px #dbe7ff!important}
 #bat .batteryGoalCardPct.active strong{color:#0f3f8f!important}
 #bat .batteryGoalCardPct.active:after{display:none!important}
+#bat .batteryGoalCardPct:focus-visible{outline:3px solid #93c5fd!important;outline-offset:2px!important}
 #bat .batteryGoalInput{display:flex!important;align-items:center!important;gap:5px!important;justify-content:flex-end!important}
 #bat .batteryGoalInput input{width:74px!important;height:32px!important;border:1px solid #cbd5e1!important;border-radius:9px!important;background:#fff!important;text-align:right!important;padding:3px 6px!important;font-weight:950!important;color:#172033!important;font-size:14px!important}
 #bat .batteryGoalInput span{display:inline!important;font-size:12px!important;font-weight:900!important;color:#64748b!important}
-#bat .batteryNativeSelect{display:none!important}
 @media(max-width:760px){#bat .batteryGoalCardPct{grid-template-columns:1fr!important;align-items:start!important}#bat .batteryGoalInput{justify-content:flex-start!important}}
 
 
@@ -1355,6 +1355,7 @@ main{padding:100px 24px 24px 48px!important;}
 #bat .batteryUnitsControl{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
 #bat .batteryUnitsControl button{width:32px;height:32px;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff;color:#312e81;font-size:20px;font-weight:950;line-height:1;cursor:pointer}
 #bat .batteryUnitsControl button:hover{background:#e0e7ff;border-color:#818cf8}
+#bat .batteryUnitsControl button:focus-visible,#bat .batteryUnitsControl input:focus-visible{outline:3px solid #93c5fd;outline-offset:2px}
 #bat .batteryUnitsControl button:disabled{opacity:.45;cursor:not-allowed;background:#f8fafc;border-color:#e2e8f0;color:#94a3b8}
 #bat .batteryUnitsControl input{width:68px;height:32px;border:1px solid #cbd5e1;border-radius:10px;background:#fff;text-align:center;font-weight:950;color:#172033;font-size:15px}
 #bat .batteryUnitsControl span{font-size:11px;font-weight:900;color:#64748b;line-height:1.2}
@@ -1388,7 +1389,7 @@ main{padding:100px 24px 24px 48px!important;}
   <button class="tabbtn" data-t="tar"><span class="navText">DATOS DE PARTIDA<small>modalidad, tarifa y costes</small></span></button>
   <button class="tabbtn" data-t="exc"><span class="navText">BALANCE<small>autoconsumo y excedentes</small></span></button>
   <button class="tabbtn" data-t="est"><span class="navText">ESTUDIO FV<small>potencia óptima</small></span></button>
-  <button class="tabbtn batteryOnly hideBattery" data-t="bat"><span class="navText">ESTUDIO BATERÍAS<small>solo con baterías</small></span></button>
+  <button class="tabbtn" data-t="bat"><span class="navText">ESTUDIO BATERÍAS<small>solo con baterías</small></span></button>
 </nav>
 <section id="gen" class="tab act inputDataTab">
   <div class="inputDataHeader card">
@@ -1533,10 +1534,10 @@ main{padding:100px 24px 24px 48px!important;}
     <div id="stEst" class="status"></div>
   </div>
   <div id="resEst" class="hide"></div>
-</section><section id="bat" class="tab batteryOnly hideBattery">
+</section><section id="bat" class="tab">
   <div class="batteryHero">
     <h2>Estudio baterías</h2>
-    <div class="note">Visible solo cuando en “Datos de partida” se selecciona “Con baterías”. Define aquí los parámetros técnicos y económicos de la batería y calcula después el estudio específico.</div>
+    <div class="note">La pestaña permanece visible para poder acceder siempre al estudio implementado. Para calcular resultados, selecciona “Con baterías” en “Datos de partida”; entonces se mostrarán los parámetros técnicos y económicos de la batería.</div>
     <div id="batteryParams" class="card dataSection batteryParamsInStudy batteryMinimal batteryOptions hideBattery">
     <div class="batteryMinimalHead">
       <div>
@@ -1953,9 +1954,21 @@ function batteryModeText(m=batteryMode()){
   return 'cubrir el '+fmt(batteryExcPct()*100,0)+'% de los excedentes';
 }
 function updateDataStartNumbering(showBattery){[['numTarifa','1.3'],['chipNumTarifa','1.3'],['numCoste','1.4'],['chipNumCoste','1.4']].forEach(([id,v])=>{let el=$(id);if(el)el.textContent=v})}
+function selectBatteryMode(mode){
+  if(!mode||!$('batteryMode'))return;
+  $('batteryMode').value=mode;
+  syncEnergyMode();
+  if($('bat')?.classList.contains('act'))renderBatteryStudy(false);
+}
+function bindBatteryGoalCards(){
+  document.querySelectorAll('.batteryGoalCard').forEach(b=>{
+    b.onclick=()=>selectBatteryMode(b.dataset.bmode);
+    b.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();selectBatteryMode(b.dataset.bmode)}};
+  });
+}
 function syncEnergyMode(){
   let em=energyMode(),show=hasBattery();
-  document.querySelectorAll('.batteryGoalCard').forEach(b=>b.onclick=()=>{if($('batteryMode'))$('batteryMode').value=b.dataset.bmode;syncEnergyMode();if($('bat')?.classList.contains('act'))renderBatteryStudy(false)});document.querySelectorAll('.modeChoice').forEach(x=>x.classList.toggle('active',x.dataset.mode===em));
+  bindBatteryGoalCards();document.querySelectorAll('.modeChoice').forEach(x=>x.classList.toggle('active',x.dataset.mode===em));
   document.querySelectorAll('.storageChoice').forEach(x=>x.classList.toggle('active',x.dataset.storage===(show?'yes':'no')));
   document.querySelectorAll('.batteryGoalCard').forEach(x=>x.classList.toggle('active',x.dataset.bmode===batteryMode()));
   document.querySelectorAll('.batteryOptions,.batteryOnly').forEach(x=>x.classList.toggle('hideBattery',!show));
