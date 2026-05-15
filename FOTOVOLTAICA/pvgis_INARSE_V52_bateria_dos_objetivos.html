@@ -1732,10 +1732,11 @@ function price(m,h){let p=mat[h][m-1],r=prices.find(x=>+x[0]===p);return r?+r[4]
 function calcExc(show=true){if(!G||!C){if(show)st('stExc','warn','Carga generación y consumo.');return}let rows=[],tp=0,tc=0,te=0,self=0,src=G.baseAvg||G.avg,csvBase=G.csvKwp||1,kwp=G.kwp||csvBase,scale=kwp/csvBase,spec=(G.baseTotal||0)/csvBase;for(let i=0;i<8760;i++){let r=src[i],g=r.kw*scale,c=C.arr[i].cons,grid=Math.max(c-g,0),e=Math.max(g-c,0),net=g-c;rows.push({...r,w:r.w*scale,kw:g,prod:g,cons:c,grid,exc:e,net});tp+=g;tc+=c;te+=e;self+=Math.min(g,c)}let expected=spec*kwp,bal=tp-tc,cov=tc>0?self/tc*100:0;E={rows,tp,tc,te,self,spec,kwp,expected,bal,cov};st('stExc','ok',`Balance actualizado. El mapa y el balance se calculan como Producción - Consumo. Producción usada = ${fg(spec,2)} kWh/kWp·año × ${fmt(kwp,2)} kWp = ${fg(expected,2)} kWh/año.`);$('sumExc').classList.add('hide');$('sumExc').innerHTML='';drawBalanceCharts(rows);$('excGraphs').classList.remove('hide');updateTopSummary()}
 
 const STUDY_RANGE_POINTS=20;
-const STUDY_RANGE_MAX_POINTS=25;
+const STUDY_RANGE_MAX_POINTS=20;
+const STUDY_RANGE_POWER_MULTIPLE=10;
 function estStep(){let r=defaultStudyRange();return isFinite(r.step)&&r.step>0?r.step:5}
 function adjEst(id,delta,min=0){let el=$(id);if(!el)return;let cur=num(el.value);if(!isFinite(cur))cur=0;let v=cur+delta;if(min!==null)v=Math.max(min,v);el.value=fmt(v,0)}
-function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return 1;return Math.max(1,Math.round(raw))}
+function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return STUDY_RANGE_POWER_MULTIPLE;return Math.max(STUDY_RANGE_POWER_MULTIPLE,Math.ceil(raw/STUDY_RANGE_POWER_MULTIPLE)*STUDY_RANGE_POWER_MULTIPLE)}
 /*
   Qué hace:
     Normaliza una potencia FV para evitar acumulación de decimales residuales
@@ -1751,8 +1752,27 @@ function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return 1;return Math.max(
 function roundStudyKwp(v){return Math.max(0,Number((v||0).toFixed(6)))}
 /*
   Qué hace:
+    Redondea una potencia FV al múltiplo obligatorio de 10 kWp para que todas
+    las filas finales del Estudio FV tengan PPICO múltiplo de 10.
+  Parámetros:
+    v    -> potencia FV en kWp.
+    mode -> 'floor', 'ceil' o 'round' para elegir cómo aproximar al múltiplo.
+  Qué devuelve:
+    La potencia FV normalizada al múltiplo de 10 kWp más adecuado y mayor que 0.
+  En qué casos deberías modificarla:
+    Cuando el Estudio FV deba trabajar con otra granularidad obligatoria distinta
+    de 10 kWp, o si se permite volver a mostrar potencias no enteras.
+*/
+function studyPowerMultiple(v,mode='round'){
+ let m=STUDY_RANGE_POWER_MULTIPLE,x=num(v);
+ if(!isFinite(x)||x<=0)x=m;
+ let q=x/m,fn=mode==='floor'?Math.floor:(mode==='ceil'?Math.ceil:Math.round);
+ return Math.max(m,fn(q)*m);
+}
+/*
+  Qué hace:
     Devuelve intervalos de potencia FV legibles para construir tablas de Estudio FV,
-    priorizando pasos redondos cuando permiten mantener aproximadamente 20-25 líneas.
+    priorizando pasos múltiplos de 10 kWp para mantener exactamente 20 líneas.
   Parámetros:
     raw      -> intervalo objetivo calculado a partir del rango deseado (kWp).
     minStep  -> intervalo mínimo admisible para evitar filas repetidas o demasiado densas.
@@ -1762,64 +1782,48 @@ function roundStudyKwp(v){return Math.max(0,Number((v||0).toFixed(6)))}
     Cuando quieras cambiar qué se considera un intervalo “redondo” o permitir
     más/menos granularidad en las potencias mostradas.
 */
-function studyStepCandidates(raw,minStep=1){
+function studyStepCandidates(raw,minStep=STUDY_RANGE_POWER_MULTIPLE){
  if(!isFinite(raw)||raw<=0)raw=minStep;
- minStep=Math.max(0.000001,minStep||1);
- let vals=new Set(),baseExp=Math.floor(Math.log10(Math.max(raw,minStep)));
- for(let e=baseExp-2;e<=baseExp+3;e++){
-  let p=Math.pow(10,e);
-  [1,1.25,1.5,2,2.5,5,7.5,10].forEach(m=>{let v=m*p;if(v>=minStep)vals.add(roundStudyKwp(v))});
- }
- vals.add(roundStudyKwp(Math.max(raw,minStep)));
- return Array.from(vals).filter(v=>isFinite(v)&&v>0).sort((a,b)=>a-b);
+ minStep=Math.max(STUDY_RANGE_POWER_MULTIPLE,minStep||STUDY_RANGE_POWER_MULTIPLE);
+ let step=Math.max(minStep,Math.ceil(raw/STUDY_RANGE_POWER_MULTIPLE)*STUDY_RANGE_POWER_MULTIPLE);
+ return [roundStudyKwp(step)];
 }
 /*
   Qué hace:
-    Elige el intervalo de potencia que aproxima el rango a un número de filas
-    objetivo, permitiendo hasta un máximo de líneas y favoreciendo pasos redondos.
+    Elige el intervalo de potencia que aproxima el rango a 20 filas exactas,
+    obligando a que el paso sea múltiplo de 10 kWp.
   Parámetros:
     min       -> primera potencia del rango (kWp).
     max       -> límite superior mínimo que debe quedar cubierto (kWp).
     count     -> número objetivo de filas.
-    maxCount  -> número máximo de filas permitido.
+    maxCount  -> se conserva por compatibilidad, pero el estudio final queda en count líneas.
   Qué devuelve:
-    Un objeto con step y count; count puede quedar entre count y maxCount si eso
-    permite usar un intervalo más legible.
+    Un objeto con step y count, donde step siempre es múltiplo de 10 kWp.
   En qué casos deberías modificarla:
-    Cuando cambie el criterio de adaptación de 20-25 filas o la prioridad entre
-    exactitud del rango e intervalos redondos.
+    Cuando cambie el criterio de 20 filas exactas o la obligación de trabajar con
+    PPICO múltiplo de 10.
 */
 function chooseStudyStepForRows(min,max,count=STUDY_RANGE_POINTS,maxCount=STUDY_RANGE_MAX_POINTS){
  let span=Math.max(0,num(max)-num(min));
  count=Math.max(2,Math.round(num(count)||STUDY_RANGE_POINTS));
- maxCount=Math.max(count,Math.round(num(maxCount)||count));
- if(!(span>0))return {step:1,count:count};
- let raw=span/(count-1),cands=studyStepCandidates(raw,Math.max(raw/8,0.1)),best=null;
- cands.forEach(step=>{
-  let n=Math.ceil(span/step-1e-9)+1;
-  let inBand=n>=count&&n<=maxCount;
-  let score=(inBand?0:100000)+Math.abs(n-count)*100+Math.abs(step-raw)/raw;
-  if(!best||score<best.score)best={step,count:n,score};
- });
- if(!best||best.count>maxCount||best.count<count){
-  best={step:roundStudyKwp(raw),count:count,score:0};
- }
- return {step:best.step,count:best.count};
+ if(!(span>0))return {step:STUDY_RANGE_POWER_MULTIPLE,count:count};
+ let raw=span/(count-1),step=studyStepCandidates(raw,STUDY_RANGE_POWER_MULTIPLE)[0]||STUDY_RANGE_POWER_MULTIPLE;
+ return {step:roundStudyKwp(step),count:count};
 }
 /*
   Qué hace:
     Genera una serie de potencias FV para la tabla comparativa del Estudio FV.
     Puede construir el rango desde un centro y paso, o desde límites min/max;
-    en este segundo caso adapta el intervalo para obtener unas 20-25 líneas.
+    en este segundo caso adapta el intervalo para obtener 20 líneas múltiplo de 10.
   Parámetros:
     opts.center    -> potencia central o de referencia que se quiere estudiar (kWp).
     opts.min       -> potencia inicial explícita para la primera línea (kWp).
     opts.max       -> potencia máxima mínima que debe cubrir la tabla (kWp).
     opts.step      -> intervalo entre potencias consecutivas (kWp), opcional.
     opts.count     -> número objetivo de líneas/potencias.
-    opts.maxCount  -> número máximo de líneas si se adapta el intervalo.
+    opts.maxCount  -> compatibilidad; el resultado final mantiene opts.count líneas.
     opts.minLimit  -> potencia mínima admisible para la primera línea (kWp).
-    opts.adaptCount -> si true, permite 20-25 filas priorizando intervalos redondos.
+    opts.adaptCount -> si true, prioriza pasos múltiplos de 10 kWp.
   Qué devuelve:
     Un objeto con min, max, step, target y count, listo para pasarlo a studyArray().
   En qué casos deberías modificarla:
@@ -1832,7 +1836,8 @@ function buildStudyPowerRange(opts={}){
  let minLimit=num(opts.minLimit);if(!isFinite(minLimit)||minLimit<=0)minLimit=1;
  let explicitMin=num(opts.min),explicitMax=num(opts.max);
  if(isFinite(explicitMin)&&isFinite(explicitMax)&&explicitMax>explicitMin){
-  let min=roundStudyKwp(Math.max(minLimit,explicitMin));
+  let min=studyPowerMultiple(Math.max(minLimit,explicitMin),'floor');
+  if(min<minLimit)min=studyPowerMultiple(minLimit,'ceil');
   let max=Math.max(explicitMax,min);
   let step=num(opts.step);
   let finalCount=count;
@@ -1841,19 +1846,20 @@ function buildStudyPowerRange(opts={}){
     let picked=chooseStudyStepForRows(min,max,count,maxCount);
     step=picked.step;finalCount=picked.count;
    }else{
-    step=(max-min)/Math.max(1,count-1);
+    step=niceManualStep((max-min)/Math.max(1,count-1));
    }
   }else{
-   step=Math.max(0.000001,step);
-   finalCount=Math.ceil((max-min)/step-1e-9)+1;
+   step=niceManualStep(step);
+   finalCount=count;
   }
   max=roundStudyKwp(min+step*(finalCount-1));
-  return {min,max,step:roundStudyKwp(step),target:num(opts.target)||min,count:finalCount};
+  return {min,max,step:roundStudyKwp(step),target:studyPowerMultiple(num(opts.target)||min,'round'),count:finalCount};
  }
- let step=niceManualStep(num(opts.step)||5);
- let center=num(opts.center);if(!isFinite(center)||center<=0)center=step*10;
+ let step=niceManualStep(num(opts.step)||STUDY_RANGE_POWER_MULTIPLE);
+ let center=studyPowerMultiple(num(opts.center),'round');
  let below=Math.floor(count/2),min=center-below*step;
  if(min<minLimit){let intervalsBelow=Math.max(0,Math.floor((center-minLimit)/step));min=center-intervalsBelow*step;}
+ min=studyPowerMultiple(min,'ceil');
  let max=min+step*(count-1);
  return {min:roundStudyKwp(min),max:roundStudyKwp(max),step:roundStudyKwp(step),target:center,count};
 }
