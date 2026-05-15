@@ -1936,10 +1936,18 @@ function buildAutoStudyRangeByCriteria(opts={}){
  let fallback=buildStudyPowerRange({center:target,step:baseStep,count:STUDY_RANGE_POINTS,minLimit:1});
  if(!G||!C||!(opts.years>0)||!isFinite(opts.rate)||!isFinite(opts.baseCost))return fallback;
  let broadMax=Math.max(fallback.max,targetRaw*3,(G.kwp||target)*3,baseStep*(STUDY_RANGE_POINTS-1));
- let broad=studyRangeProbeArray(1,broadMax,Math.max(1,broadMax/44),opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+ let broadStep=Math.max(1,broadMax/44);
+ let broad=studyRangeProbeArray(1,broadMax,broadStep,opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
  if(!broad.length)return fallback;
- let finiteVan=broad.filter(x=>isFinite(x.van));
- let bestVan=(finiteVan.length?finiteVan:broad).slice().sort((a,b)=>(isFinite(b.van)?b.van:-Infinity)-(isFinite(a.van)?a.van:-Infinity))[0]||broad[0];
+ let bestByVan=arr=>(arr.filter(x=>isFinite(x.van)).length?arr.filter(x=>isFinite(x.van)):arr).slice().sort((a,b)=>(isFinite(b.van)?b.van:-Infinity)-(isFinite(a.van)?a.van:-Infinity))[0]||arr[0];
+ let bestProbeVan=bestByVan(broad);
+ let bestFinalVan=bestProbeVan;
+ if(hasBattery()){
+  let broadFinal=studyArray(1,broadMax,broadStep,opts.base||G.kwp||1,opts.years,opts.rate,opts.baseCost);
+  if(broadFinal.length)bestFinalVan=bestByVan(broadFinal);
+ }
+ let kVanMax=Math.max(bestProbeVan?.k||1,bestFinalVan?.k||1);
+ let targetVan=(hasBattery()&&bestFinalVan&&isFinite(bestFinalVan.k))?bestFinalVan:bestProbeVan;
  let minAp=Math.max(0,Math.min(1,(num($('estAprovMin')?.value)||0)/100));
  let kAprov=broad[0].k;
  if(minAp>0){
@@ -1959,12 +1967,12 @@ function buildAutoStudyRangeByCriteria(opts={}){
    kAprov=broad[0].k;
   }
  }
- let min=Math.max(1,kAprov),span=bestVan.k-min;
+ let min=Math.max(1,kAprov),span=kVanMax-min;
  if(!(span>0))span=Math.max(baseStep*(STUDY_RANGE_POINTS-1),targetRaw*0.75,baseStep);
- let max=bestVan.k+span;
- let range=buildStudyPowerRange({min,max,target:bestVan.k,count:STUDY_RANGE_POINTS,maxCount:STUDY_RANGE_MAX_POINTS,minLimit:1,adaptCount:true});
+ let max=kVanMax+span;
+ let range=buildStudyPowerRange({min,max,target:targetVan?.k||kVanMax,count:STUDY_RANGE_POINTS,maxCount:STUDY_RANGE_MAX_POINTS,minLimit:1,adaptCount:true});
  range.kAprov=roundStudyKwp(kAprov);
- range.kVanMax=roundStudyKwp(bestVan.k);
+ range.kVanMax=roundStudyKwp(kVanMax);
  range.broadMin=roundStudyKwp(broad[0].k);
  range.broadMax=roundStudyKwp(broad.at(-1).k);
  return range;
