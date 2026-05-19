@@ -1884,6 +1884,36 @@ const STUDY_RANGE_POINTS=20;
 function estStep(){let r=defaultStudyRange();return isFinite(r.step)&&r.step>0?r.step:5}
 function adjEst(id,delta,min=0){let el=$(id);if(!el)return;let cur=num(el.value);if(!isFinite(cur))cur=0;let v=cur+delta;if(min!==null)v=Math.max(min,v);el.value=fmt(v,0)}
 function niceManualStep(raw){if(!isFinite(raw)||raw<=0)return 1;return Math.max(1,Math.round(raw))}
+const STUDY_RANGE_MIN_ROWS=20, STUDY_RANGE_MAX_ROWS=25;
+/*
+  Qué hace:
+    Genera candidatos de intervalo redondo para el Estudio FV, escalando pasos tipo
+    1, 2, 5, 10, 20, 25, 50 y 100 kWp al tamaño del rango calculado.
+  Parámetros:
+    range -> anchura del rango FV que se quiere dividir en filas legibles (kWp).
+  Qué devuelve:
+    Un array ordenado de intervalos candidatos en kWp.
+  En qué casos deberías modificarla:
+    Cuando se quieran admitir otros intervalos redondos o cambiar la escala mínima
+    de los pasos usados en la comparativa.
+*/
+function niceStudyStepCandidates(range){let r=Math.max(1,Math.abs(range)||1),base=[1,2,5,10,20,25,50,100],out=[];for(let e=-2;e<=6;e++){let f=Math.pow(10,e);base.forEach(v=>{let x=v*f;if(x>=1&&x<=r*2+1)out.push(Number(x.toFixed(6)))})}return Array.from(new Set(out)).sort((a,b)=>a-b)}
+/*
+  Qué hace:
+    Elige el mejor intervalo redondo para que el rango automático produzca entre
+    20 y 25 filas siempre que sea posible.
+  Parámetros:
+    min     -> potencia mínima calculada para el estudio (kWp).
+    max     -> potencia máxima teórica calculada para el estudio (kWp).
+    minRows -> número mínimo deseado de filas.
+    maxRows -> número máximo admisible de filas.
+  Qué devuelve:
+    Un objeto con step, count y max; max conserva el máximo teórico recibido.
+  En qué casos deberías modificarla:
+    Cuando cambie la prioridad entre número de filas e intervalos redondos, o los
+    límites mínimo y máximo de filas aceptados.
+*/
+function pickRoundStudyStep(min,max,minRows=STUDY_RANGE_MIN_ROWS,maxRows=STUDY_RANGE_MAX_ROWS){let range=Math.max(0,max-min);if(range<=0)return {step:1,count:1,max:min};let best=null;niceStudyStepCandidates(range).forEach(step=>{let count=Math.floor(range/step)+1;if(count<2)return;let inRange=count>=minRows&&count<=maxRows,score=(inRange?0:1000)+Math.abs(count-((minRows+maxRows)/2))*10+step/(range||1);let cand={step,count,max,score,inRange};if(!best||cand.score<best.score)best=cand});if(!best){let step=Math.max(1,Math.round(range/(minRows-1)));best={step,count:Math.floor(range/step)+1,max}}return best}
 /*
   Qué hace:
     Genera una serie de potencias FV para la tabla comparativa del Estudio FV,
@@ -1908,6 +1938,54 @@ function buildStudyPowerRange(opts={}){
  if(min<minLimit){let intervalsBelow=Math.max(0,Math.floor((center-minLimit)/step));min=center-intervalsBelow*step;}
  let max=min+step*(count-1);
  return {min,max,step,target:center,count};
+}
+/*
+  Qué hace:
+    Localiza por interpolación la potencia FV que queda justo en el aprovechamiento
+    mínimo configurado, usando filas ya calculadas con la lógica normal del estudio.
+  Parámetros:
+    rows  -> array de filas de estudio, ordenables por potencia FV, con k y aprov.
+    minAp -> aprovechamiento mínimo configurado en tanto por uno.
+  Qué devuelve:
+    La potencia FV interpolada en kWp; si no hay cruce, devuelve el extremo más
+    cercano disponible para mantener un rango operativo.
+  En qué casos deberías modificarla:
+    Cuando cambie la definición técnica de aprovechamiento mínimo o se quiera usar
+    un método de interpolación distinto.
+*/
+function findMinAprovPower(rows,minAp){
+ let a=(rows||[]).filter(r=>isFinite(r.k)&&isFinite(r.aprov)).slice().sort((x,y)=>x.k-y.k);
+ if(!a.length)return 1;if(!(minAp>0))return a[0].k;
+ for(let i=1;i<a.length;i++){let p=a[i-1],c=a[i];if((p.aprov-minAp)*(c.aprov-minAp)<=0&&Math.abs(c.aprov-p.aprov)>1e-9){let t=(minAp-p.aprov)/(c.aprov-p.aprov);return p.k+(c.k-p.k)*Math.max(0,Math.min(1,t))}}
+ return a.reduce((best,r)=>Math.abs(r.aprov-minAp)<Math.abs(best.aprov-minAp)?r:best,a[0]).k;
+}
+/*
+  Qué hace:
+    Construye el rango automático del Estudio FV con el mínimo en el aprovechamiento
+    configurado, el centro aproximado en la potencia de máximo VAN y un máximo
+    simétrico respecto a esa potencia, eligiendo un intervalo redondo de 20 a 25 filas.
+  Parámetros:
+    opts.base     -> potencia base del CSV FV para escalar la generación (kWp).
+    opts.years    -> años del análisis financiero.
+    opts.rate     -> tasa de descuento en tanto por uno.
+    opts.baseCost -> coste anual de referencia sin FV.
+    opts.fallback -> rango inicial usado para definir el sondeo si aún no hay anclas.
+  Qué devuelve:
+    Un objeto con min, max, step, target, count, kVanMax, minAprovKwp y probeRows,
+    listo para generar la tabla final con studyArray().
+  En qué casos deberías modificarla:
+    Cuando cambie el criterio de centrado del estudio automático, el número admisible
+    de filas o la lista de intervalos redondos aceptados.
+*/
+function buildAutomaticStudyPowerRange(opts={}){
+ let fb=opts.fallback||defaultStudyRange(),base=opts.base||G.kwp||1,years=opts.years,rate=opts.rate,baseCost=opts.baseCost,minAp=(num($('estAprovMin')?.value)||0)/100;
+ let probeStep=Math.max(1,niceManualStep(fb.step||5)),probeMin=1,probeMax=Math.max(fb.max||0,(fb.target||50)*2,probeStep*(STUDY_RANGE_MAX_ROWS+5)),probe=[];
+ for(let i=0;i<6;i++){probe=studyArray(probeMin,probeMax,probeStep,base,years,rate,baseCost);let best=probe.slice().sort((a,b)=>b.van-a.van)[0],cross=minAp>0&&probe.some(r=>r.aprov<=minAp);if(best&&best.k<probeMax-probeStep&&(!minAp||cross))break;probeMax*=1.75}
+ let kVan=probe.slice().sort((a,b)=>b.van-a.van)[0]?.k||fb.target||probeStep*10;
+ let minK=findMinAprovPower(probe,minAp);
+ if(!(minK<kVan)){let span=Math.max(probeStep*(STUDY_RANGE_MIN_ROWS-1),kVan*.5);minK=Math.max(1,kVan-span)}
+ let theoreticalMax=kVan+(kVan-minK),picked=pickRoundStudyStep(minK,theoreticalMax,STUDY_RANGE_MIN_ROWS,STUDY_RANGE_MAX_ROWS);
+ return {min:minK,max:picked.max,step:picked.step,target:kVan,count:picked.count,kVanMax:kVan,minAprovKwp:minK,theoreticalMax,probeRows:probe};
 }
 function syncEstPex(){let ep=$('estPex'),p=$('pex');if(!ep||!p)return;let v=num(ep.value);if(isFinite(v)&&v>=0){p.value=ep.value}else{ep.value=p.value||0}}
 function initEstPex(){let ep=$('estPex'),p=$('pex');if(ep&&p){ep.value=p.value||ep.value||0;ep.oninput=()=>{let v=num(ep.value);if(isFinite(v)&&v>=0)p.value=ep.value};p.oninput=()=>{ep.value=p.value}}}
@@ -2582,6 +2660,7 @@ function study(mode='manual'){
  window.EST_LAST_MODE=mode;
  window.EST_HAS_RESULT=true;
  if(mode==='auto'){
+  r=buildAutomaticStudyPowerRange({base,years,rate,baseCost,fallback:r});
   min=r.min;
   max=r.max;
   step=r.step;
@@ -2591,14 +2670,14 @@ function study(mode='manual'){
   rec=recs[crit]||pickStudy(arr,crit);
   window.EST_GLOBAL_REC=rec;
   window.EST_GLOBAL_RECS=recs;
-  autoMeta={min,max,step,broadMin:min,broadMax:max,target:r.target,count:r.count};
+  autoMeta={min,max,step,broadMin:min,broadMax:max,target:r.target,count:r.count,kVanMax:r.kVanMax,minAprovKwp:r.minAprovKwp};
   if($('estManualKwp'))$('estManualKwp').value=fmt(rec.k,0);
   updateCriteriaCards(recs);
-  if($('estAutoInfo'))$('estAutoInfo').innerHTML=`Búsqueda automática de <b>${STUDY_RANGE_POINTS}</b> líneas: de <b>${fmt(min,0)}</b> a <b>${fmt(max,0)} kWp</b>, con paso de <b>${fmt(step,0)} kWp</b>.`;
+  if($('estAutoInfo'))$('estAutoInfo').innerHTML=`Búsqueda automática de <b>${r.count}</b> líneas: de <b>${fmt(min,0)}</b> a <b>${fmt(max,0)} kWp</b>, con paso de <b>${fmt(step,0)} kWp</b>. Mínimo por aprovechamiento: <b>${fmt(r.minAprovKwp,0)} kWp</b>; máximo VAN detectado: <b>${fmt(r.kVanMax,0)} kWp</b>.`;
   $('estAutoRec').innerHTML=`Recomendada automática (${esc((EST_CRITERIA.find(c=>c.code===crit)||EST_CRITERIA[0]).name)}): <b>${fmt(rec.k,0)} kWp</b>.`;
   if($('estManualRec'))$('estManualRec').innerHTML=`El cálculo manual queda preparado con la potencia recomendada: <b>${fmt(rec.k,0)} kWp</b>. Puedes sustituirla por cualquier kWp a comprobar.`;
   renderStudyResult(arr,rec,years,mode,autoMeta,recs);
-  st('stEst','ok',`Cálculo automático realizado con ${STUDY_RANGE_POINTS} líneas de comparativa.`);
+  st('stEst','ok',`Cálculo automático realizado con ${r.count} líneas de comparativa.`);
  }else{
   let target=num($('estManualKwp')?.value);
   if(!isFinite(target)||target<=0)target=(window.EST_GLOBAL_REC&&isFinite(window.EST_GLOBAL_REC.k))?window.EST_GLOBAL_REC.k:r.target;
